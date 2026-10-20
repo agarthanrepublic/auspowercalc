@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="QuickCable: AS/NZS 3008.1 cable sizing that opens PowerCad .QPJ projects and PowerCad CSVs.">
+<meta name="description" content="QuickCable: AS/NZS 3008.1 cable sizing with .QPJ project and SWB/Loads/Cables CSV import and export.">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -88,7 +88,7 @@ footer{color:var(--ink2);font-size:11.5px;margin-top:22px;line-height:1.6}
 code{font-family:var(--mono);background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:.92em}
 a{color:var(--accent-ink)}
 .netnum{width:62px}.toolbtn{background:var(--panel2);border:1px solid var(--line);color:var(--ink);border-radius:7px;padding:7px 12px;font-family:var(--mono);font-size:12px;cursor:pointer}
-.toolbtn:hover{border-color:var(--accent)}
+.toolbtn:hover{border-color:var(--accent)}.toolbtn:disabled{opacity:.45;cursor:not-allowed}.toolbtn:disabled:hover{border-color:var(--line)}
 .summ{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:0 0 14px}
 .rowbad{color:var(--bad);font-weight:600}.rowok{color:var(--ok)}.indent{color:var(--ink2)}
 #netTable input,#netTable select{padding:4px 6px;font-size:12px}#netTable td{padding:4px 6px}#netTable .nm{width:88px}
@@ -131,7 +131,7 @@ body.dragging .wrap{outline:2px dashed var(--accent);outline-offset:6px;border-r
     <div class="row">
       <div class="logo">
         <svg class="spark" viewBox="0 0 48 48" fill="none" aria-hidden="true"><rect x="2" y="2" width="44" height="44" rx="10" fill="var(--accent)"/><path d="M26 9 L15 26 H23 L21 39 L33 20 H25 Z" fill="#1a1d21"/></svg>
-        <div><h1>QuickCable</h1><p class="sub">AS/NZS 3008.1 cable sizing &middot; 42 cable types decoded from PowerCad's libraries</p></div>
+        <div><h1>QuickCable</h1><p class="sub">AS/NZS 3008.1 cable sizing &middot; 42 cable types in the library</p></div>
       </div>
       <button class="theme" id="themeBtn" type="button">◐ theme</button>
     </div>
@@ -147,14 +147,16 @@ body.dragging .wrap{outline:2px dashed var(--accent);outline-offset:6px;border-r
     <label for="projName" class="note" style="margin:0">Project</label>
     <input id="projName" type="text" value="Example project" aria-label="Project name">
     <button class="toolbtn primary" id="openBtn" type="button">Open…</button>
-    <input id="fileIn" type="file" accept=".qpj,.QPJ,.csv,.CSV,.json" hidden>
+    <input id="fileIn" type="file" hidden>
     <button class="toolbtn" id="saveBtn" type="button">Save project</button>
-    <button class="toolbtn" id="csvBtn" type="button">Export PowerCad CSV</button>
-    <label class="chk" title="PowerCad locks any cable whose size is given in the CSV"><input id="csvSizes" type="checkbox"> include cable sizes</label>
+    <button class="toolbtn" id="qpjBtn" type="button" disabled title="Open a .QPJ project first">Save as .QPJ</button>
+    <button class="toolbtn" id="csvBtn" type="button">Export SWB CSV</button>
+    <button class="toolbtn" id="schedBtn" type="button">Cable schedule</button>
+    <label class="chk" title="Cables whose size is given in the CSV are imported as locked"><input id="csvSizes" type="checkbox"> include cable sizes</label>
     <span class="spacer"></span>
     <button class="toolbtn" id="newBtn" type="button">New example</button>
   </div>
-  <p class="note" style="margin:6px 2px 0">Open a PowerCad project (<code>.QPJ</code>), a PowerCad SWB/Loads/Cables CSV, or a saved QuickCable project — or drop the file anywhere on the page.</p>
+  <p class="note" style="margin:6px 2px 0">Open a <code>.QPJ</code> project, an SWB/Loads/Cables CSV, or a saved QuickCable project — or drop the file anywhere on the page.</p>
   <div id="report"></div>
 
   <!-- ============ SINGLE CIRCUIT ============ -->
@@ -169,7 +171,7 @@ body.dragging .wrap{outline:2px dashed var(--accent);outline-offset:6px;border-r
       <div class="field" id="kwWrap" hidden><label for="kw">Load (kW)</label><input id="kw" type="number" value="50" step="0.1"></div>
       <div class="field"><label for="len">Route length (m)</label><input id="len" type="number" value="45" step="0.5"></div>
       <h2 style="margin-top:18px"><span class="n">2</span> &nbsp;Cable &amp; installation</h2>
-      <div class="field"><label for="ctype">Cable type <span style="color:var(--accent-ink)">(decoded .LIB)</span></label><select id="ctype"></select></div>
+      <div class="field"><label for="ctype">Cable type <span style="color:var(--accent-ink)">(cable library)</span></label><select id="ctype"></select></div>
       <div class="two"><div class="field"><label for="mat">Conductor</label><select id="mat"><option value="Cu">Copper</option><option value="Al">Aluminium</option></select></div><div class="field"><label for="ins">Insulation</label><select id="ins"><option value="X90">XLPE 90°C</option><option value="V75">PVC 75°C</option></select></div></div>
       <div class="field"><label for="method">Installation method</label><select id="method"></select></div>
       <div class="two"><div class="field"><label for="amb">Ambient (°C)</label><input id="amb" type="number" value="40"></div><div class="field"><label for="par">Parallel runs</label><input id="par" type="number" value="1" min="1"></div></div>
@@ -177,7 +179,7 @@ body.dragging .wrap{outline:2px dashed var(--accent);outline-offset:6px;border-r
       <h2 style="margin-top:18px"><span class="n">3</span> &nbsp;Protection &amp; limits</h2>
       <div class="field"><label for="dev">Protective device</label><select id="dev"><option value="mcb">MCB / MCCB (I²t = 1.45 Iₙ)</option><option value="fuse">Fuse gG (I²t = 1.6 Iₙ)</option></select></div>
       <div class="field inline"><label for="inrate">Rating Iₙ (A) — 0 = auto</label><input id="inrate" type="number" value="0"></div>
-      <div class="two"><div class="field"><label for="vdmax">Max volt drop (%)</label><input id="vdmax" type="number" value="5" step="0.1"></div><div class="field"><label for="ikt">Fault time (s)</label><input id="ikt" type="number" value="0.1" step="0.01"></div></div>
+      <div class="two"><div class="field"><label for="vdmax">Max volt drop (%)</label><input id="vdmax" type="number" value="5" step="0.1"></div><div class="field"><label for="ikt">Clearing time (s)</label><input id="ikt" type="number" value="0.02" step="0.01"></div></div>
       <div class="field inline"><label for="ik">Prospective fault (kA)</label><input id="ik" type="number" value="10" step="0.1"></div>
     </form>
     <div>
@@ -185,7 +187,7 @@ body.dragging .wrap{outline:2px dashed var(--accent);outline-offset:6px;border-r
       <div class="metrics" id="metrics"></div>
       <div class="checks" id="checks"></div>
       <div class="tblwrap"><table id="candTable"><thead><tr><th>Size</th><th>Iₜ</th><th>I<sub>z</sub></th><th>θ°C</th><th>V-drop</th><th>%</th><th>Loss W</th><th>CCC</th><th>VD</th><th>Fault</th></tr></thead><tbody></tbody></table></div>
-      <p class="note" style="margin-top:8px">Iₜ is the <b>decoded PowerCad rating</b> for the chosen type &amp; method; I<sub>z</sub> = Iₜ × k<sub>amb</sub> × k<sub>group</sub> × runs.</p>
+      <p class="note" style="margin-top:8px">Iₜ is the <b>library rating</b> for the chosen type &amp; method; I<sub>z</sub> = Iₜ × k<sub>amb</sub> × k<sub>group</sub> × runs.</p>
     </div>
   </div>
   </section>
@@ -205,7 +207,7 @@ body.dragging .wrap{outline:2px dashed var(--accent);outline-offset:6px;border-r
       <div class="canvas"><svg id="sld" xmlns="http://www.w3.org/2000/svg"></svg></div>
       <div class="panel" id="editor"><p class="note">Click a component in the diagram to edit it.</p></div>
     </div>
-    <p class="note" style="margin-top:10px">Each cable is sized live from the decoded library using PowerCad's per-unit target-voltage-drop method. Labels show selected size and cable volt-drop; a <span style="color:var(--bad)">red</span> run means its path exceeds the site voltage-drop allowance.</p>
+    <p class="note" style="margin-top:10px">Each cable is sized live from the cable library using the per-unit target-voltage-drop method. Labels show selected size and cable volt-drop; a <span style="color:var(--bad)">red</span> run means its path exceeds the site voltage-drop allowance.</p>
   </section>
 
   <!-- ============ COORDINATION ============ -->
@@ -215,38 +217,51 @@ body.dragging .wrap{outline:2px dashed var(--accent);outline-offset:6px;border-r
       <div>
         <div class="panel">
           <h2 style="margin-bottom:10px">Protection coordination</h2>
-          <div class="field"><label for="coDev">Protective device <span style="color:var(--accent-ink)">(PowerCad curve)</span></label><select id="coDev"></select></div>
+          <div class="field"><label for="coDev">Protective device <span style="color:var(--accent-ink)">(library curve)</span></label><select id="coDev"></select></div>
           <p class="note" id="coNote" style="margin-top:6px"></p>
         </div>
         <div id="coVerdict" style="margin-top:12px"></div>
       </div>
     </div>
-    <p class="note" style="margin-top:10px">The shaded band is the device's real time–current curve (decoded from PowerCad's exported data). The sloped line is the selected cable's adiabatic thermal-withstand limit <code>t = (k·S / I)²</code>. For coordination the device must clear <b>below</b> the cable curve at the prospective fault current — so the breaker trips before the cable is damaged. Cable, size, fault level and clearing come from the Single circuit tab.</p>
+    <p class="note" style="margin-top:10px">The shaded band is the device's real time–current curve (from manufacturer time–current data). The sloped line is the selected cable's adiabatic thermal-withstand limit <code>t = (k·S / I)²</code>. For coordination the device must clear <b>below</b> the cable curve at the prospective fault current — so the breaker trips before the cable is damaged. Cable, size, fault level and clearing come from the Single circuit tab.</p>
   </section>
 
   <!-- ============ NETWORK TABLE ============ -->
   <section id="tab-network" hidden>
     <div class="panel" style="margin-top:18px">
-      <h2>Network parameters — per-unit target voltage drop</h2>
+      <h2>Supply &amp; network parameters</h2>
       <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:end">
+        <div class="field" style="margin:0"><label for="nSup">Supply</label><select id="nSup" style="width:150px"><option value="tx">Transformer</option><option value="net">Network supply</option></select></div>
+        <div class="field" style="margin:0" id="kvaWrap"><label for="nKva">Transformer kVA (0 = auto)</label><input id="nKva" class="netnum" type="number" value="0" step="1" style="width:90px"></div>
+        <div class="field" style="margin:0" id="zWrap"><label for="nZ">Impedance % (0 = auto)</label><input id="nZ" class="netnum" type="number" value="0" step="0.1" style="width:90px"></div>
+        <div class="field" style="margin:0" id="ikWrap" hidden><label for="nIk">Fault at supply (kA)</label><input id="nIk" class="netnum" type="number" value="10" step="0.5" style="width:90px"></div>
         <div class="field" style="margin:0"><label for="nV">Voltage (V)</label><input id="nV" class="netnum" type="number" value="400"></div>
         <div class="field" style="margin:0"><label for="nPh">Phases</label><select id="nPh" class="netnum"><option value="3">3</option><option value="1">1</option></select></div>
         <div class="field" style="margin:0"><label for="nPf">PF</label><input id="nPf" class="netnum" type="number" value="0.9" step="0.01"></div>
+        <div class="field" style="margin:0"><label for="nPfT">Target PF</label><input id="nPfT" class="netnum" type="number" value="0.95" step="0.01"></div>
+      </div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:end;margin-top:12px">
         <div class="field" style="margin:0"><label for="nSite">Site VD allow (%)</label><input id="nSite" class="netnum" type="number" value="5" step="0.1"></div>
         <div class="field" style="margin:0"><label for="nFsc">FSC VD (%)</label><input id="nFsc" class="netnum" type="number" value="1.5" step="0.1"></div>
         <div class="field" style="margin:0"><label for="nAmb">Ambient °C</label><input id="nAmb" class="netnum" type="number" value="40"></div>
+        <div class="field" style="margin:0"><label for="nT">Feeder fault clearing (s)</label><input id="nT" class="netnum" type="number" value="0.02" step="0.01" style="width:90px"></div>
       </div>
     </div>
     <div class="summ" id="netSumm" style="margin-top:14px"></div>
-    <div class="tblwrap"><table id="netTable"><thead><tr><th>Circuit</th><th>Fed from</th><th>Load A</th><th>Len m</th><th>Type</th><th>Method</th><th>FSC</th><th>Target%</th><th>Size</th><th>Cable%</th><th>ΣVD%</th></tr></thead><tbody></tbody></table></div>
-    <p class="note" style="margin-top:10px"><b>PU = (Site VD − FSC VD) / ΣLₙ</b>; mains/sub-mains target PU × length, final sub-circuits target the FSC allowance. The diagram and this table share one network model.</p>
+    <div class="tblwrap"><table id="netTable"><thead><tr><th>Circuit</th><th>Fed from</th><th>Load A</th><th>Len m</th><th>Type</th><th>Method</th><th>FSC</th><th>Target%</th><th>Active / N / E</th><th>Cable%</th><th>ΣVD%</th><th>Iₙ A</th><th>Ik kA</th><th>Max len m</th></tr></thead><tbody></tbody></table></div>
+    <p class="note" style="margin-top:10px"><b>Voltage drop:</b> PU = (Site VD − FSC VD) / ΣLₙ; mains and sub-mains target PU × length (capped by each board's own max VD), final sub-circuits target the FSC allowance. <b>Fault level:</b> three-phase prospective fault from the transformer (or supply fault level) through each cable at 20 °C; mains and sub-mains must withstand the fault at their supply end for the clearing time (k²S² ≥ I²t). <b>Earth fault-loop:</b> maximum length per AS/NZS 3000 Appendix B, L = 0.8·U₀·Sₚₕ·Sₚₑ / (ρ·Iₐ·(Sₚₕ+Sₚₑ)); the earth conductor starts at AS/NZS 3000 Table 5.1 and is increased until the length complies. <b>Ik</b> is the fault at the load end. The diagram and this table share one network model.</p>
   </section>
 
-  <details id="dataDetails"><summary>Decoded cable libraries (42 types from PowerCad .LIB files)</summary>
-    <div class="dbody"><p class="note" style="margin-bottom:12px"><b>Current-carrying capacity (A) reverse-engineered from PowerCad's binary cable libraries</b> — Standard (AS/NZS 3008), TRICAB, PRYSMIAN, NEXANS and OLDCABLES. Pick a type on the Single circuit tab to view its decoded table.</p><div id="libView"></div></div></details>
-  <details id="aboutDetails"><summary>How this maps to PowerCad-5 &amp; the .LIB format</summary><div class="dbody note" id="about"></div></details>
+  <details id="dataDetails"><summary>Cable library (42 types)</summary>
+    <div class="dbody"><p class="note" style="margin-bottom:12px"><b>Current-carrying capacity (A) for each cable type and installation method</b> — Standard (AS/NZS 3008), TRICAB, PRYSMIAN, NEXANS and OLDCABLES. Pick a type on the Single circuit tab to view its table.</p><div id="libView"></div></div></details>
+  <details id="coverDetails"><summary>Feature coverage</summary>
+    <div class="dbody">
+      <p class="note" style="margin-bottom:10px"><b>Included</b> works end to end; <b>Partial</b> covers the core of the feature; <b>Not included</b> isn't in QuickCable.</p>
+      <div class="tblwrap"><table class="cover"><thead><tr><th>Area</th><th>Feature</th><th>QuickCable</th><th style="text-align:left">Notes</th></tr></thead><tbody id="coverBody"></tbody></table></div>
+    </div></details>
+  <details id="aboutDetails"><summary>About the file formats</summary><div class="dbody note" id="about"></div></details>
 
-  <footer>QuickCable is an independent, clean-room implementation of the AS/NZS 3008.1 cable-sizing method, mirroring PowerCad-5's Cable Selection and single-line workflow. Cable ratings are decoded from PowerCad <code>.LIB</code> files for interoperability; the sizing engine and diagram are original. Results are indicative — verify against the current standard and manufacturer data. Not affiliated with PowerCad Software Pty Ltd.</footer>
+  <footer>QuickCable is an independent implementation of the AS/NZS 3008.1 cable-sizing method. Results are indicative — verify against the current standard and manufacturer data.</footer>
 </div>
 
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -274,20 +289,34 @@ function sizesFor(uid,m){const r=CBYKEY[uid].ratings[m]||{};return Object.keys(r
 function ratingOf(uid,m,s,ins,mat){const b=CBYKEY[uid].ratings[m][s];return b==null?null:b*INS_FAC[ins]*MAT_FAC[mat];}
 function rOf(mat,s){return R20[mat][s]!=null?R20[mat][s]:(mat==="Al"?R20.Cu[s]*1.64:R20.Cu[s]);}
 function firstMethod(uid){return Object.keys(CBYKEY[uid].ratings)[0];}
+// AS/NZS 3000 Table 5.1 minimum copper earthing conductor for a given active size
+const EARTH_CU={1:1,1.5:1.5,2.5:2.5,4:2.5,6:2.5,10:4,16:6,25:6,35:10,50:16,70:25,95:25,120:35,150:50,185:70,240:95,300:120,400:120,500:120,630:120};
+const STD_SIZES=[1,1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240,300,400,500,630];
+// mean tripping current Ia as a multiple of In (AS/NZS 3000 Appendix B; MCCB/fuse typical)
+const DEVTYPES={B:{lbl:"MCB type B",ia:4},C:{lbl:"MCB type C",ia:7.5},D:{lbl:"MCB type D",ia:12.5},MCCB:{lbl:"MCCB (inst. ≈10×In)",ia:10},gG:{lbl:"Fuse gG (≈5×In)",ia:5,fuse:true}};
+const RHO={Cu:22.5e-3,Al:36e-3};
+const TX_STD=[25,50,63,100,160,200,250,315,400,500,630,750,800,1000,1250,1500,2000,2500,3000];
+const txZpct=k=>k<=630?4:k<=1250?5:6, txXR=k=>k<500?3:k<=1000?5:7;
+function lmaxOf(Uo,Sph,Spe,mat,Ia){return 0.8*Uo*Sph*Spe/(RHO[mat]*Ia*(Sph+Spe));}
+function earthFor(Uo,Sph,mat,Ia,L){ // smallest earth from Table 5.1 upward (max = active) that meets the fault-loop length
+  const base=EARTH_CU[Sph]??Math.min(Sph,120);const cand=STD_SIZES.filter(s=>s>=base&&s<=Math.max(Sph,base));
+  for(const s of cand){const lm=lmaxOf(Uo,Sph,s,mat,Ia);if(L<=lm+1e-9)return {e:s,lm,ok:true};}
+  const s=cand.at(-1)||base;return {e:s,lm:lmaxOf(Uo,Sph,s,mat,Ia),ok:false};}
 function sizeCable(o){
-  const ka=interp(AMB[o.ins],o.amb),kg=interp(GRP,o.groups),sin=Math.sqrt(1-o.pf*o.pf);
+  const ka=interp(AMB[o.ins],o.amb),kg=interp(GRP,o.groups),kx=o.kx||1,sin=Math.sqrt(1-o.pf*o.pf),Ik=o.Ik||0;
   const rows=sizesFor(o.key,o.method).map(sz=>{
-    const It=ratingOf(o.key,o.method,sz,o.ins,o.mat),Iz=It*ka*kg*o.par,Ipc=o.Ib/o.par;
+    const It=ratingOf(o.key,o.method,sz,o.ins,o.mat),Iz=It*ka*kg*kx*o.par,Ipc=o.Ib/o.par;
     const util=Iz>0?o.Ib/Iz:9,theta=o.amb+Math.min(util,2)**2*(TMAX[o.ins]-o.amb);
     const Rth=rOf(o.mat,sz)*(1+ALPHA[o.mat]*(theta-20)),z=Rth*o.pf+XR[sz]*sin;
     const Vd=(o.ph===3?Math.sqrt(3):2)*Ipc*o.L/1000*z,Vdp=o.V>0?Vd/o.V*100:0;
-    const loss=(o.ph===3?3:2)*o.par*(Ipc*Ipc*Rth*o.L/1000),Smin=Ipc*Math.sqrt(o.ikt)/KAD[o.mat][o.ins];
+    // short-circuit withstand uses the FAULT current shared across parallel runs (k²S² ≥ I²t)
+    const loss=(o.ph===3?3:2)*o.par*(Ipc*Ipc*Rth*o.L/1000),Smin=(Ik/o.par)*Math.sqrt(o.ikt)/KAD[o.mat][o.ins];
     return {sz,It,Iz,theta,Vd,Vdp,loss,Smin,passCCC:Iz>=o.In*o.i2fac&&o.In>=o.Ib-1e-9,passVD:Vdp<=o.vdmax+1e-9,passSC:sz>=Smin-1e-9};
   });
   let selIdx=rows.findIndex(r=>r.passCCC&&r.passVD&&r.passSC);
   const fC=rows.findIndex(r=>r.passCCC),fV=rows.findIndex(r=>r.passVD),fS=rows.findIndex(r=>r.passSC);
   let gov="current capacity";if(selIdx>=0){if(selIdx===fV&&fV>fC&&fV>=fS)gov="voltage drop";else if(selIdx===fS&&fS>fC&&fS>fV)gov="fault withstand";}
-  return {rows,selIdx,gov,ka,kg};
+  return {rows,selIdx,gov,ka,kg,kx};
 }
 const $=id=>document.getElementById(id),num=id=>parseFloat($(id).value)||0,S={ph:3,loadMode:"A"};
 function fmt(x,d=1){return (x==null||isNaN(x))?"—":x.toLocaleString(undefined,{minimumFractionDigits:d,maximumFractionDigits:d});}
@@ -302,13 +331,15 @@ function render(){
   let Ib=S.loadMode==="A"?num("ib"):(ph===3?num("kw")*1000/(Math.sqrt(3)*V*pf):num("kw")*1000/(V*pf));
   let In=num("inrate");const autoIn=In<=0;if(autoIn)In=nextDevice(Ib);
   const i2fac=$("dev").value==="fuse"?1.6/1.45:1.0;
-  const R=sizeCable({key:$("ctype").value,method:$("method").value,ins:$("ins").value,mat:$("mat").value,ph,V,pf,Ib,L:num("len"),amb:num("amb"),groups:Math.max(1,num("groups")),par:Math.max(1,num("par")),In,i2fac,vdmax:num("vdmax"),ikt:num("ikt")});
+  const R=sizeCable({key:$("ctype").value,method:$("method").value,ins:$("ins").value,mat:$("mat").value,ph,V,pf,Ib,L:num("len"),amb:num("amb"),groups:Math.max(1,num("groups")),par:Math.max(1,num("par")),In,i2fac,vdmax:num("vdmax"),ikt:num("ikt"),Ik:num("ik")*1000});
   const sel=R.selIdx>=0?R.rows[R.selIdx]:null,v=$("verdict");
+  const Uo1=ph===3?V/Math.sqrt(3):V,Ia1=($("dev").value==="fuse"?5:(In<=63?7.5:10))*In;
+  const fl=sel?earthFor(Uo1,sel.sz,$("mat").value,Ia1/Math.max(1,num("par")),num("len")):null;
   if(sel){v.innerHTML=`<div><div class="lbl">Smallest compliant conductor</div><div class="size">${sel.sz} mm²${num("par")>1?` ×${num("par")}`:""}</div></div><div class="gov"><span class="chip ok">PASS</span><br>governed by ${R.gov}</div>`;v.style.borderColor="var(--ok)";}
   else{v.innerHTML=`<div><div class="lbl">No listed size satisfies all checks</div><div class="size" style="color:var(--bad)">—</div></div><div class="gov"><span class="chip bad">REVIEW</span><br>relax limits or add parallel runs</div>`;v.style.borderColor="var(--bad)";}
-  $("metrics").innerHTML=sel?[["Design current Iᵦ",`${fmt(Ib)} <small>A</small>`],["Protective Iₙ"+(autoIn?" (auto)":""),`${In} <small>A</small>`],["Derated Iᴢ",`${fmt(sel.Iz)} <small>A</small>`],["Volt drop",`${fmt(sel.Vd)} <small>V</small>`],["Volt drop",`${fmt(sel.Vdp,2)} <small>%</small>`],["Operating temp",`${fmt(sel.theta)} <small>°C</small>`],["Conductor loss",`${fmt(sel.loss)} <small>W</small>`],["Derating k",`${fmt(R.ka,2)}×${fmt(R.kg,2)}`]].map(([k,val])=>`<div class="metric"><div class="k">${k}</div><div class="v">${val}</div></div>`).join(""):"";
+  $("metrics").innerHTML=sel?[["Design current Iᵦ",`${fmt(Ib)} <small>A</small>`],["Protective Iₙ"+(autoIn?" (auto)":""),`${In} <small>A</small>`],["Derated Iᴢ",`${fmt(sel.Iz)} <small>A</small>`],["Volt drop",`${fmt(sel.Vd)} <small>V</small>`],["Volt drop",`${fmt(sel.Vdp,2)} <small>%</small>`],["Operating temp",`${fmt(sel.theta)} <small>°C</small>`],["Conductor loss",`${fmt(sel.loss)} <small>W</small>`],["Derating k",`${fmt(R.ka,2)}×${fmt(R.kg,2)}`],["Neutral / earth",`${sel.sz} / ${fl.e} <small>mm²</small>`],["Max length (fault loop)",`${fmt(fl.lm,0)} <small>m</small>`]].map(([k,val])=>`<div class="metric"><div class="k">${k}</div><div class="v">${val}</div></div>`).join(""):"";
   const i2=$("dev").value==="fuse"?1.6:1.45;
-  $("checks").innerHTML=sel?[["Iᵦ ≤ Iₙ ≤ Iᴢ (coordination)",Ib<=In+1e-9&&In<=sel.Iz+1e-9,`${fmt(Ib)} ≤ ${In} ≤ ${fmt(sel.Iz)} A`],["I²t ≤ 1.45·Iᴢ (overload)",i2*In<=1.45*sel.Iz+1e-9,`${fmt(i2*In)} ≤ ${fmt(1.45*sel.Iz)}`],[`Volt drop ≤ ${num("vdmax")}%`,sel.passVD,`${fmt(sel.Vdp,2)} %`],["Short-circuit withstand",sel.passSC,`${sel.sz} ≥ ${fmt(sel.Smin)} mm²`]].map(([t,ok,d])=>`<div class="check ${ok?"pass":"fail"}"><span class="chip ${ok?"ok":"bad"}">${ok?"✓":"✕"}</span><span class="ct">${t}</span><span class="cd">${d}</span></div>`).join(""):"";
+  $("checks").innerHTML=sel?[["Iᵦ ≤ Iₙ ≤ Iᴢ (coordination)",Ib<=In+1e-9&&In<=sel.Iz+1e-9,`${fmt(Ib)} ≤ ${In} ≤ ${fmt(sel.Iz)} A`],["I²t ≤ 1.45·Iᴢ (overload)",i2*In<=1.45*sel.Iz+1e-9,`${fmt(i2*In)} ≤ ${fmt(1.45*sel.Iz)}`],[`Volt drop ≤ ${num("vdmax")}%`,sel.passVD,`${fmt(sel.Vdp,2)} %`],["Short-circuit withstand",sel.passSC,`${sel.sz} ≥ ${fmt(sel.Smin)} mm² at ${fmt(num("ik"),1)} kA`],[`Earth fault-loop (AS/NZS 3000 App. B, Iₐ ${fmt(Ia1,0)} A)`,fl.ok,`${fmt(num("len"),0)} ≤ ${fmt(fl.lm,0)} m, earth ${fl.e} mm²`]].map(([t,ok,d])=>`<div class="check ${ok?"pass":"fail"}"><span class="chip ${ok?"ok":"bad"}">${ok?"✓":"✕"}</span><span class="ct">${t}</span><span class="cd">${d}</span></div>`).join(""):"";
   $("candTable").querySelector("tbody").innerHTML=R.rows.map((r,i)=>{const dot=b=>b?'<span class="pf">✓</span>':'<span class="ff">✕</span>';return `<tr class="${i===R.selIdx?"sel":""}"><td>${r.sz}</td><td>${fmt(r.It)}</td><td>${fmt(r.Iz)}</td><td>${fmt(r.theta)}</td><td>${fmt(r.Vd)}</td><td>${fmt(r.Vdp,2)}</td><td>${fmt(r.loss)}</td><td>${dot(r.passCCC)}</td><td>${dot(r.passVD)}</td><td>${dot(r.passSC)}</td></tr>`;}).join("");
   buildLib();
 }
@@ -328,19 +359,65 @@ function example(){nid=1;NET=[
 ];}
 const byId=i=>NET.find(n=>n.id===i);
 const pathOf=n=>{const p=[];let c=n;while(c){p.unshift(c);c=c.parent?byId(c.parent):null;}return p;};
+const kidsOf=id=>NET.filter(n=>n.parent===id);
+function netParams(){return {V:num("nV"),ph:+$("nPh").value,pf:Math.min(1,Math.max(.1,num("nPf"))),site:num("nSite"),fsc:num("nFsc"),amb:num("nAmb"),
+  sup:$("nSup").value,kva:num("nKva"),zpct:num("nZ"),ikSup:num("nIk")*1000,ikt:num("nT")||0.02,pfT:Math.min(1,num("nPfT")||0.95)};}
 function computeNet(){
-  const V=num("nV"),ph=+$("nPh").value,pf=Math.min(1,Math.max(.1,num("nPf"))),site=num("nSite"),fsc=num("nFsc"),amb=num("nAmb");
+  const p=netParams(),V=p.V,ph=p.ph,site=p.site,fsc=p.fsc;
+  NET.forEach(n=>{if(!CBYKEY[n.uid]){n.uid="STA:4|1";n.method="conduit";}if(!CBYKEY[n.uid].ratings[n.method])n.method=firstMethod(n.uid);});
+  // 1. maximum demand, bottom-up. A board set to "calculate" sums its circuits; single-phase circuits count a third
+  //    on a three-phase board; each child's upstream diversity scales what it passes up (upstream diversity).
+  const md={};
+  const mdOf=n=>{const ch=kidsOf(n.id);ch.forEach(mdOf);
+    md[n.id]=(n.kind==="board"&&n.autoMD&&ch.length)?ch.reduce((a,c)=>a+md[c.id]*((c.ph===1&&ph===3)?1/3:1)*(c.div??1),0)+(n.local||0):n.load;};
+  kidsOf(0).forEach(mdOf);
+  // 2. per-unit target voltage drop, capped by each cable's own max VD
   const leaves=NET.filter(n=>!NET.some(m=>m.parent===n.id)),tgt={};
-  leaves.forEach(l=>{const p=pathOf(l),sum=p.filter(n=>!n.fsc).reduce((a,n)=>a+n.len,0),PU=sum>0?(site-fsc)/sum:0;
-    p.forEach(n=>{const t=n.fsc?fsc:PU*n.len;if(tgt[n.id]==null||t<tgt[n.id])tgt[n.id]=t;});});
+  leaves.forEach(l=>{const pt=pathOf(l),sum=pt.filter(n=>!n.fsc).reduce((a,n)=>a+n.len,0),PU=sum>0?(site-fsc)/sum:0;
+    pt.forEach(n=>{let t=n.fsc?fsc:PU*n.len;if(n.vdmax>0&&n.vdmax<t)t=n.vdmax;if(tgt[n.id]==null||t<tgt[n.id])tgt[n.id]=t;});});
+  // 3. source impedance
+  const rootMD=kidsOf(0).reduce((a,n)=>a+md[n.id],0);let Rs,Xs,kva=null,zpct=null;
+  if(p.sup==="tx"){const need=Math.sqrt(3)*V*rootMD/1000;kva=p.kva>0?p.kva:(TX_STD.find(s=>s>=need)||TX_STD.at(-1));
+    zpct=p.zpct>0?p.zpct:txZpct(kva);const Zt=(zpct/100)*V*V/(kva*1000),xr=txXR(kva);Rs=Zt/Math.sqrt(1+xr*xr);Xs=Rs*xr;}
+  else{const Zs=V/(Math.sqrt(3)*Math.max(p.ikSup,100));Rs=Zs/Math.SQRT2;Xs=Rs;}
+  const ikAt=z=>V/(Math.sqrt(3)*Math.hypot(z.R,z.X));
+  // 4. size top-down: each cable sees the fault at its supply end
   const res={};
-  NET.forEach(n=>{const nph=n.ph||ph,nV=(nph===1&&ph===3)?Math.round(V/Math.sqrt(3)):V;
-    if(!CBYKEY[n.uid]){n.uid="STA:4|1";n.method="conduit";}
-    if(!CBYKEY[n.uid].ratings[n.method])n.method=firstMethod(n.uid);
-    const r=sizeCable({key:n.uid,method:n.method,ins:n.ins||"X90",mat:n.mat||"Cu",ph:nph,V:nV,pf:n.pf||pf,Ib:n.load,L:n.len,amb,groups:1,par:1,In:nextDevice(n.load),i2fac:1,vdmax:tgt[n.id]??site,ikt:0.1});
-    const sel=r.selIdx>=0?r.rows[r.selIdx]:null;res[n.id]={target:tgt[n.id]??site,size:sel?sel.sz:null,vd:sel?sel.Vdp:null,ok:!!sel};});
+  const walk=(id,src)=>kidsOf(id).forEach(n=>{
+    const nph=n.ph||ph,nV=(nph===1&&ph===3)?Math.round(V/Math.sqrt(3)):V,Uo=ph===3?V/Math.sqrt(3):V,mat=n.mat||"Cu",ins=n.ins||"X90";let par=Math.max(1,n.par||1);
+    const Ib=md[n.id],In=n.In>0?n.In:nextDevice(Ib),dev=n.dev||(In<=63?"C":"MCCB"),D=DEVTYPES[dev]||DEVTYPES.C;
+    const ikSrc=ikAt(src),feeder=!n.fsc;
+    if(n.bus||(n.kind==="board"&&n.len===0)){ // bus section: no cable, same busbar as its parent
+      res[n.id]={target:0,size:null,vd:0,ok:true,sized:true,bus:true,gov:"bus section",md:Ib,In,dev,ikSrc,ikEnd:ikSrc,e:null,lm:null,flOk:null,neutral:null,vdStart:null,Iz:null,feeder};
+      walk(n.id,src);return;}
+    const run=pp=>sizeCable({key:n.uid,method:n.method,ins,mat,ph:nph,V:nV,pf:n.pf||p.pf,Ib,L:n.len,amb:n.amb??p.amb,groups:1,par:pp,In,
+      i2fac:D.fuse?1.6/1.45:1,vdmax:tgt[n.id]??site,ikt:p.ikt,Ik:feeder?ikSrc:0,kx:n.derate||1});
+    let r=run(par);
+    // parallel cables: if no single cable passes, try 2–4 in parallel (unless runs are set)
+    if(r.selIdx<0&&!(n.par>0))for(let pp=2;pp<=4;pp++){const r2=run(pp);if(r2.selIdx>=0){r=r2;par=pp;break;}}
+    const sel=r.selIdx>=0?r.rows[r.selIdx]:null;let end=src,fl=null,vdStart=null;
+    if(sel){end={R:src.R+rOf(mat,sel.sz)*n.len/1000/par,X:src.X+XR[sel.sz]*n.len/1000/par};
+      fl=earthFor(Uo,sel.sz,mat,D.ia*In/par,n.len);
+      if(n.kind==="motor"){const Ist=(n.startX||6)*Ib,spf=0.35,Rh=rOf(mat,sel.sz)*(1+ALPHA[mat]*(TMAX[ins]-20));
+        vdStart=(nph===3?Math.sqrt(3):2)*(Ist/par)*n.len/1000*(Rh*spf+XR[sel.sz]*Math.sqrt(1-spf*spf))/nV*100;}}
+    res[n.id]={target:tgt[n.id]??site,size:sel?sel.sz:null,par,label:sel?(par>1?`${par}×${sel.sz}`:String(sel.sz)):null,vd:sel?sel.Vdp:null,ok:!!sel&&(!fl||fl.ok),sized:!!sel,gov:r.gov+(par>1&&!(n.par>0)?` (${par} in parallel)`:""),md:Ib,In,dev,
+      ikSrc,ikEnd:ikAt(end),e:fl?fl.e:null,lm:fl?fl.lm:null,flOk:fl?fl.ok:null,neutral:sel?sel.sz:null,vdStart,Iz:sel?sel.Iz:null,feeder};
+    walk(n.id,end);});
+  walk(0,{R:Rs,X:Xs});
   const acc={};let worst=0,wl="";leaves.forEach(l=>{let s=0;pathOf(l).forEach(n=>{s+=res[n.id].vd||0;acc[n.id]=Math.max(acc[n.id]||0,s);});if(s>worst){worst=s;wl=l.name;}});
-  return {res,acc,worst,wl,site,leaves:leaves.length,V,ph,pf};
+  // 5. power-factor correction needed at the supply
+  const kW=Math.sqrt(3)*V*rootMD*p.pf/1000,pfc=p.pf<p.pfT?kW*(Math.tan(Math.acos(p.pf))-Math.tan(Math.acos(p.pfT))):0;
+  return {res,acc,worst,wl,site,leaves:leaves.length,V,ph,pf:p.pf,kva,zpct,sup:p.sup,ik0:ikAt({R:Rs,X:Xs}),rootMD,pfc,kW,
+    flFails:NET.filter(n=>res[n.id]&&res[n.id].flOk===false).length,unsized:NET.filter(n=>res[n.id]&&!res[n.id].sized).length};
+}
+function netSummaryHTML(C){
+  const items=[["Components",NET.length],
+    C.sup==="tx"?["Transformer",`${fmt(C.kva,0)} kVA · ${fmt(C.zpct,1)} %`]:["Supply","network"],
+    ["Fault at supply",`${fmt(C.ik0/1000,1)} <small>kA</small>`],["Max demand",`${fmt(C.rootMD,0)} <small>A</small>`],
+    ["Worst path VD",`${fmt(C.worst,2)} <small>%</small>`],
+    ["PF correction",C.pfc>0?`${fmt(C.pfc,0)} <small>kVAr</small>`:"none needed"],
+    ["Checks",(C.worst<=C.site&&!C.flFails&&!C.unsized)?'<span class="chip ok">ALL PASS</span>':`<span class="chip bad">${[C.worst>C.site?"VD over":"",C.flFails?C.flFails+" fault-loop":"",C.unsized?C.unsized+" unsized":""].filter(Boolean).join(" · ")}</span>`]];
+  return items.map(([k,v])=>`<div class="metric"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
 }
 
 // ---- NETWORK TABLE ----
@@ -351,17 +428,18 @@ function renderNet(){
   tb.innerHTML=NET.map(n=>{const r=C.res[n.id],d=pathOf(n).length-1;
     return `<tr data-id="${n.id}"><td><span class="indent">${"› ".repeat(d)}</span><input class="nm" value="${n.name}" data-f="name"></td>
     <td><select data-f="parent"><option value="0" ${n.parent===0?"selected":""}>Supply</option>${opts(n)}</select></td>
-    <td><input class="netnum" type="number" value="${n.load}" data-f="load"></td><td><input class="netnum" type="number" value="${n.len}" data-f="len">${n.flag?' <span class="flag" title="Length not stored in the source file — enter the real length">⚠</span>':""}</td>
+    <td>${n.kind==="board"&&n.autoMD?`<span title="Calculated from downstream circuits">${fmt(r.md,1)}</span>`:`<input class="netnum" type="number" value="${n.load}" data-f="load">`}${n.est?' <span class="flag" title="Load estimated on import — enter the real value">⚠</span>':""}</td><td><input class="netnum" type="number" value="${n.len}" data-f="len">${n.flag?' <span class="flag" title="Length not stored in the source file — enter the real length">⚠</span>':""}</td>
     <td><select data-f="uid">${tOpts(n.uid)}</select></td><td><select data-f="method">${mOpts(n.uid,n.method)}</select></td>
     <td style="text-align:center"><input type="checkbox" data-f="fsc" ${n.fsc?"checked":""}></td>
-    <td>${fmt(r.target,2)}</td><td class="${r.ok?"":"rowbad"}">${r.size!=null?r.size+" mm²":"—"}</td><td>${fmt(r.vd,2)}</td>
-    <td class="${(C.acc[n.id]||0)>C.site?"rowbad":"rowok"}">${fmt(C.acc[n.id],2)}</td></tr>`;}).join("");
-  $("netSumm").innerHTML=[["Circuits",NET.length],["Legs",C.leaves],["Worst path VD",`${fmt(C.worst,2)} <small>%</small>`],["Site allowance",`${fmt(C.site,2)} <small>%</small>`],["Network",C.worst<=C.site?'<span class="chip ok">WITHIN BUDGET</span>':'<span class="chip bad">OVER BUDGET</span>']].map(([k,v])=>`<div class="metric"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
+    <td>${r.bus?"—":fmt(r.target,2)}</td><td class="${r.sized?"":"rowbad"}">${r.bus?"bus section":r.size!=null?`${r.label} / ${r.neutral} / ${r.e}`:"no size"}</td><td>${fmt(r.vd,2)}</td>
+    <td class="${(C.acc[n.id]||0)>C.site?"rowbad":"rowok"}">${fmt(C.acc[n.id],2)}</td>
+    <td>${r.In}</td><td>${fmt(r.ikEnd/1000,1)}</td><td class="${r.flOk===false?"rowbad":""}">${r.lm!=null?fmt(r.lm,0):"—"}</td></tr>`;}).join("");
+  $("netSumm").innerHTML=netSummaryHTML(C);
 }
 $("netTable").addEventListener("input",e=>{const tr=e.target.closest("tr");if(!tr)return;const n=byId(+tr.dataset.id),f=e.target.dataset.f;if(!f)return;
   if(f==="fsc")n.fsc=e.target.checked;else if(f==="name")n.name=e.target.value;else if(f==="parent")n.parent=+e.target.value;
   else if(f==="uid"){n.uid=e.target.value;if(!CBYKEY[n.uid].ratings[n.method])n.method=firstMethod(n.uid);}
-  else if(f==="method")n.method=e.target.value;else{n[f]=parseFloat(e.target.value)||0;if(f==="len")n.flag=false;}renderNet();});
+  else if(f==="method")n.method=e.target.value;else{n[f]=parseFloat(e.target.value)||0;if(f==="len")n.flag=false;if(f==="load")n.est=false;}renderNet();});
 
 // ---- SINGLE-LINE DIAGRAM ----
 let selId=null;
@@ -394,7 +472,7 @@ function drawSvg(){
   const T=(x,y)=>[x+PAD,y+PAD];let out="";
   // source busbar
   const [sx,sy]=T(pos[0].x,pos[0].y);
-  out+=`<line x1="${sx-60}" y1="${sy}" x2="${sx+60}" y2="${sy}" stroke="var(--board)" stroke-width="5"/><text class="nsub" x="${sx}" y="${sy-10}">SUPPLY ${fmt(C.V,0)} V ${C.ph}φ</text>`;
+  out+=`<line x1="${sx-60}" y1="${sy}" x2="${sx+60}" y2="${sy}" stroke="var(--board)" stroke-width="5"/><text class="nsub" x="${sx}" y="${sy-10}">${C.sup==="tx"?`${esc(PROJ.transformer||"T1")} ${fmt(C.kva,0)} kVA · `:"SUPPLY · "}${fmt(C.V,0)} V · ${fmt(C.ik0/1000,1)} kA</text>`;
   // wires + nodes
   NET.forEach(n=>{const [x,y]=T(pos[n.id].x,pos[n.id].y);const p=pos[n.parent]||pos[0];const [px,py]=T(p.x,p.y);
     const r=C.res[n.id],over=(C.acc[n.id]||0)>C.site||!r.ok;
@@ -403,35 +481,61 @@ function drawSvg(){
     // breaker box near parent
     const by=py+18;out+=`<rect class="cbreak" x="${px-6}" y="${by-6}" width="12" height="12" rx="2"/>`;
     // cable label
-    out+=`<text class="clabel ${over?"over":""}" x="${x}" y="${topY-22}">${r.size!=null?r.size+" mm²":"no size"}</text><text class="clabel vd ${over?"over":""}" x="${x}" y="${topY-8}">${fmt(r.vd,2)}%${n.flag?" ⚠":""}${n.flag?`<title>Length not in source file — enter the real length</title>`:""}</text>`;
+    const why=[!r.sized?"no listed size passes":"",r.flOk===false?`fault-loop: ${fmt(n.len,0)} m > max ${fmt(r.lm,0)} m`:"",(C.acc[n.id]||0)>C.site?"path VD over site allowance":"",n.flag?"length not in source file":""].filter(Boolean).join("; ");
+    if(r.bus){out+=`<text class="clabel vd" x="${x}" y="${topY-8}">bus section</text>`;return;}
+    out+=`<text class="clabel ${over?"over":""}" x="${x}" y="${topY-22}">${r.size!=null?r.label+" mm²":"no size"}${why?`<title>${esc(why)}</title>`:""}</text><text class="clabel vd ${over?"over":""}" x="${x}" y="${topY-8}">${fmt(r.vd,2)}%${n.flag?" ⚠":""}${why?`<title>${esc(why)}</title>`:""}</text>`;
   });
   NET.forEach(n=>{const [x,y]=T(pos[n.id].x,pos[n.id].y);const r=C.res[n.id];
     out+=`<g class="node ${n.id===selId?"selected":""}" data-id="${n.id}">${drawSymbol(n,x,y)}`;
-    if(n.kind==="board")out+=`<text class="nsub" x="${x+50}" y="${y+4}" style="text-anchor:start">${fmt(n.load,0)} A</text>`;
+    if(n.kind==="board")out+=`<text class="nsub" x="${x+50}" y="${y-2}" style="text-anchor:start">${fmt(r.md,0)} A</text><text class="nsub" x="${x+50}" y="${y+11}" style="text-anchor:start">${fmt(r.ikEnd/1000,1)} kA</text>`;
     else out+=`<text class="nlabel" x="${x}" y="${y+33}">${esc(n.name)}</text><text class="nsub" x="${x}" y="${y+48}">${fmt(n.load,0)} A${n.ph===1?" · 1φ":""}</text>`;
     out+=`</g>`;
   });
   svg.innerHTML=out;
-  $("dgSumm").innerHTML=[["Components",NET.length],["Legs",C.leaves],["Worst path VD",`${fmt(C.worst,2)} <small>%</small>`],["Site allowance",`${fmt(C.site,2)} <small>%</small>`],["Network",C.worst<=C.site?'<span class="chip ok">WITHIN BUDGET</span>':'<span class="chip bad">OVER BUDGET</span>']].map(([k,v])=>`<div class="metric"><div class="k">${k}</div><div class="v">${v}</div></div>`).join("");
+  $("dgSumm").innerHTML=netSummaryHTML(C);
 }
 function renderEditor(){
   const ed=$("editor");const n=selId?byId(selId):null;
   if(!n){ed.innerHTML='<p class="note">Click a component in the diagram to edit it.</p>';return;}
   const parentOpts=`<option value="0" ${n.parent===0?"selected":""}>Supply</option>`+NET.filter(x=>x.id!==n.id&&!isDescendant(x.id,n.id)).map(x=>`<option value="${x.id}" ${n.parent===x.id?"selected":""}>${esc(x.name)}</option>`).join("");
+  const C=computeNet(),r=C.res[n.id]||{},isB=n.kind==="board";
+  const res=r.bus?[["Connection","Bus section of the parent board (no cable)"],["Design current",`${fmt(r.md,1)} A`],["Fault level",`${fmt(r.ikSrc/1000,1)} kA`]]:r.sized?[["Active / neutral / earth",`${r.label} / ${r.par>1?r.par+"×":""}${r.neutral} / ${r.e} mm²`],["Governed by",r.gov],["Design current",`${fmt(r.md,1)} A`],["Derated capacity",`${fmt(r.Iz,0)} A`],
+    ["Cable / path VD",`${fmt(r.vd,2)} / ${fmt(C.acc[n.id],2)} %`],["Fault at supply end",`${fmt(r.ikSrc/1000,1)} kA`],["Fault at load end",`${fmt(r.ikEnd/1000,1)} kA`],
+    ["Max length (fault loop)",`${fmt(r.lm,0)} m ${r.flOk?"✓":"✕"}`]].concat(r.vdStart!=null?[["Starting VD (cable)",`${fmt(r.vdStart,1)} %${r.vdStart>15?" ✕":""}`]]:[]):[["Result","No listed size passes all checks"]];
   ed.innerHTML=`<h2 style="font-size:11px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);margin:0 0 12px;font-weight:600">Edit component</h2>
     <div class="field"><label>Name</label><input id="eName" value="${esc(n.name)}"></div>
-    <div class="field"><label>Type</label><select id="eKind">${["board","light","motor","socket","load"].map(k=>`<option value="${k}" ${n.kind===k?"selected":""}>${k[0].toUpperCase()+k.slice(1)}</option>`).join("")}</select></div>
+    <div class="two"><div class="field"><label>Type</label><select id="eKind">${["board","light","motor","socket","load"].map(k=>`<option value="${k}" ${n.kind===k?"selected":""}>${k[0].toUpperCase()+k.slice(1)}</option>`).join("")}</select></div>
+      <div class="field"><label>Phases</label><select id="ePh"><option value="3" ${(n.ph||3)===3?"selected":""}>3-phase</option><option value="1" ${n.ph===1?"selected":""}>1-phase</option></select></div></div>
     <div class="field"><label>Fed from</label><select id="eParent">${parentOpts}</select></div>
-    <div class="two"><div class="field"><label>Load (A)</label><input id="eLoad" type="number" value="${n.load}"></div><div class="field"><label>Length (m)</label><input id="eLen" type="number" value="${n.len}"></div></div>
+    ${isB?`<div class="field inline"><label>Calculate demand from circuits</label><input id="eAuto" type="checkbox" ${n.autoMD?"checked":""} style="width:auto"></div>`:""}
+    <div class="two"><div class="field"><label>${isB&&n.autoMD?"Local load (A)":"Load (A)"}</label><input id="eLoad" type="number" value="${isB&&n.autoMD?(n.local||0):n.load}"></div><div class="field"><label>Length (m)</label><input id="eLen" type="number" value="${n.len}"></div></div>
     <div class="field"><label>Cable type</label><select id="eUid">${typeOptions(n.uid)}</select></div>
     <div class="field"><label>Method</label><select id="eMethod"></select></div>
-    <div class="field inline"><label>Final sub-circuit</label><input id="eFsc" type="checkbox" ${n.fsc?"checked":""} style="width:auto"></div>
+    <div class="two"><div class="field"><label>Conductor</label><select id="eMat"><option value="Cu" ${(n.mat||"Cu")==="Cu"?"selected":""}>Copper</option><option value="Al" ${n.mat==="Al"?"selected":""}>Aluminium</option></select></div>
+      <div class="field"><label>Insulation</label><select id="eIns"><option value="X90" ${(n.ins||"X90")==="X90"?"selected":""}>XLPE 90°C</option><option value="V75" ${n.ins==="V75"?"selected":""}>PVC 75°C</option></select></div></div>
+    <div class="two"><div class="field"><label>Device</label><select id="eDev">${Object.entries(DEVTYPES).map(([k,v])=>`<option value="${k}" ${(n.dev||r.dev)===k?"selected":""}>${v.lbl}</option>`).join("")}</select></div>
+      <div class="field"><label>Rating Iₙ (0 = auto)</label><input id="eIn" type="number" value="${n.In||0}"></div></div>
+    <div class="two"><div class="field"><label>Ambient °C (blank = site)</label><input id="eAmb" type="number" value="${n.amb??""}"></div><div class="field"><label>Extra derating</label><input id="eDer" type="number" step="0.01" value="${n.derate||1}"></div></div>
+    <div class="two"><div class="field"><label>Max VD % (0 = none)</label><input id="eVd" type="number" step="0.1" value="${n.vdmax||0}"></div>
+      ${isB?`<div class="field"><label>Upstream diversity</label><input id="eDiv" type="number" step="0.01" value="${n.div??1}"></div>`:n.kind==="motor"?`<div class="field"><label>Starting current ×FLC</label><input id="eStart" type="number" step="0.5" value="${n.startX||6}"></div>`:"<div></div>"}</div>
+    <div class="two"><div class="field"><label>Parallel runs (0 = auto)</label><input id="ePar" type="number" min="0" step="1" value="${n.par||0}"></div>
+      <div class="field inline" style="align-self:end"><label>Final sub-circuit</label><input id="eFsc" type="checkbox" ${n.fsc?"checked":""} style="width:auto"></div></div>
+    <div class="metrics" id="eRes" style="grid-template-columns:1fr;margin:10px 0">${res.map(([k,v])=>`<div class="metric" style="padding:7px 10px;display:flex;justify-content:space-between;gap:8px"><div class="k" style="margin:0">${k}</div><div class="v" style="font-size:13px">${v}</div></div>`).join("")}</div>
     <div style="display:flex;gap:8px;margin-top:6px"><button class="toolbtn" id="eDel" type="button">Delete</button></div>`;
   fillMethods($("eMethod"),n.uid,n.method);
-  const upd=()=>{n.name=$("eName").value;n.kind=$("eKind").value;n.parent=+$("eParent").value;n.load=parseFloat($("eLoad").value)||0;n.len=parseFloat($("eLen").value)||0;
+  const numOr=(id,d)=>{const v=parseFloat($(id).value);return isFinite(v)?v:d;};
+  const more=()=>{const n2=byId(selId);n2.ph=+$("ePh").value;n2.mat=$("eMat").value;n2.ins=$("eIns").value;n2.dev=$("eDev").value;n2.In=numOr("eIn",0);
+    const a=$("eAmb").value.trim();n2.amb=a===""?undefined:parseFloat(a);n2.derate=numOr("eDer",1);n2.vdmax=numOr("eVd",0);
+    n2.par=Math.max(0,Math.round(numOr("ePar",0)));if($("eDiv"))n2.div=numOr("eDiv",1);if($("eStart"))n2.startX=numOr("eStart",6);drawSvg();refreshRes();};
+  const refreshRes=()=>{const C2=computeNet(),r2=C2.res[selId]||{};$("eRes").innerHTML=(r2.bus?[["Connection","Bus section of the parent board (no cable)"],["Design current",`${fmt(r2.md,1)} A`],["Fault level",`${fmt(r2.ikSrc/1000,1)} kA`]]:r2.sized?[["Active / neutral / earth",`${r2.label} / ${r2.par>1?r2.par+"×":""}${r2.neutral} / ${r2.e} mm²`],["Governed by",r2.gov],["Design current",`${fmt(r2.md,1)} A`],["Derated capacity",`${fmt(r2.Iz,0)} A`],["Cable / path VD",`${fmt(r2.vd,2)} / ${fmt(C2.acc[selId],2)} %`],["Fault at supply end",`${fmt(r2.ikSrc/1000,1)} kA`],["Fault at load end",`${fmt(r2.ikEnd/1000,1)} kA`],["Max length (fault loop)",`${fmt(r2.lm,0)} m ${r2.flOk?"✓":"✕"}`]].concat(r2.vdStart!=null?[["Starting VD (cable)",`${fmt(r2.vdStart,1)} %${r2.vdStart>15?" ✕":""}`]]:[]):[["Result","No listed size passes all checks"]]).map(([k,v])=>`<div class="metric" style="padding:7px 10px;display:flex;justify-content:space-between;gap:8px"><div class="k" style="margin:0">${k}</div><div class="v" style="font-size:13px">${v}</div></div>`).join("");};
+  ["ePh","eMat","eIns","eDev"].forEach(id=>$(id).addEventListener("change",more));
+  ["eIn","eAmb","eDer","eVd","eDiv","eStart","ePar"].forEach(id=>{if($(id))$(id).addEventListener("input",more);});
+  if($("eAuto"))$("eAuto").addEventListener("change",()=>{const n2=byId(selId);n2.autoMD=$("eAuto").checked;renderDiagram();});
+  const setLoad=(n2,v)=>{if(n2.kind==="board"&&n2.autoMD)n2.local=v;else{if(v!==n2.load)n2.est=false;n2.load=v;}};
+  const upd=()=>{n.name=$("eName").value;n.kind=$("eKind").value;n.parent=+$("eParent").value;setLoad(n,parseFloat($("eLoad").value)||0);n.len=parseFloat($("eLen").value)||0;
     if($("eUid").value!==n.uid){n.uid=$("eUid").value;if(!CBYKEY[n.uid].ratings[n.method])n.method=firstMethod(n.uid);}
     n.method=$("eMethod").value;n.fsc=$("eFsc").checked;renderDiagram();};
-  ["eName","eLoad","eLen","eFsc"].forEach(id=>$(id).addEventListener("input",()=>{const n2=byId(selId);n2.name=$("eName").value;n2.load=parseFloat($("eLoad").value)||0;n2.len=parseFloat($("eLen").value)||0;n2.fsc=$("eFsc").checked;if(id==="eLen")n2.flag=false;drawSvg();}));
+  ["eName","eLoad","eLen","eFsc"].forEach(id=>$(id).addEventListener("input",()=>{const n2=byId(selId);n2.name=$("eName").value;setLoad(n2,parseFloat($("eLoad").value)||0);n2.len=parseFloat($("eLen").value)||0;n2.fsc=$("eFsc").checked;if(id==="eLen")n2.flag=false;drawSvg();refreshRes();}));
   ["eKind","eParent","eUid","eMethod"].forEach(id=>$(id).addEventListener("change",upd));
   $("eUid").addEventListener("change",()=>{const n2=byId(selId);n2.uid=$("eUid").value;if(!CBYKEY[n2.uid].ratings[n2.method])n2.method=firstMethod(n2.uid);fillMethods($("eMethod"),n2.uid,n2.method);upd();});
   $("eDel").addEventListener("click",()=>{NET.filter(x=>x.parent===selId).forEach(x=>x.parent=byId(selId).parent);NET=NET.filter(x=>x.id!==selId);selId=null;renderDiagram();});
@@ -441,9 +545,12 @@ $("sld").addEventListener("click",e=>{const g=e.target.closest(".node");if(g){se
 document.querySelector(".palette").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   const parent=selId||(NET[0]?NET[0].id:0);const k=b.dataset.add;
   const fsc=["light","motor","socket","load"].includes(k);
-  NET.push({id:nid,name:(k==="board"?"DB-":k[0].toUpperCase()+k.slice(1)+" ")+nid,parent,load:k==="motor"?30:k==="board"?100:20,len:20,uid:"STA:4|1",method:"conduit",fsc,kind:k});
+  NET.push({id:nid,name:(k==="board"?"DB-":k[0].toUpperCase()+k.slice(1)+" ")+nid,parent,load:k==="motor"?30:k==="board"?100:20,len:20,
+    uid:k==="board"?"STA:5|1":"STA:4|1",method:"conduit",fsc,kind:k,autoMD:k==="board"?true:undefined,ph:k==="light"||k==="socket"?1:undefined});
   selId=nid;nid++;renderDiagram();});
-["nV","nPh","nPf","nSite","nFsc","nAmb"].forEach(id=>$(id).addEventListener("input",()=>{renderNet();if(!$("tab-diagram").hidden)renderDiagram();}));
+const supSync=()=>{const tx=$("nSup").value==="tx";$("kvaWrap").hidden=!tx;$("zWrap").hidden=!tx;$("ikWrap").hidden=tx;};
+$("nSup").addEventListener("change",supSync);
+["nV","nPh","nPf","nSite","nFsc","nAmb","nSup","nKva","nZ","nIk","nT","nPfT"].forEach(id=>$(id).addEventListener("input",()=>{renderNet();if(!$("tab-diagram").hidden)renderDiagram();}));
 
 // ---- COORDINATION ----
 $("coDev").innerHTML=DEVLIB.map((d,i)=>`<option value="${i}">${d.name}</option>`).join("");
@@ -510,64 +617,92 @@ function interpCurve(curve,I){ // time at current I by log-log interpolation
 }
 
 /*QPJ-START*/
-// ===== PowerCad file formats =====
-const QPJ_MAGIC="QuickCable - PowerCad Software Pty Ltd";
+// ===== project and library file formats =====
+const QPJ_MAGIC="QuickCable - "; // start of the .QPJ header
 function kindOf(name){const u=name.toUpperCase(),c=u.includes("|")?u.split("|")[1].trim():u;
   if(/^(M\d+|HP-|FAN|MTR|MOTOR|PUMP|AHU)/.test(c))return "motor";
   if(/^SO|GPO|OUTLET|DSO/.test(c))return "socket";
-  if(/FLUORO|LIGHT|^LT|EMERG|^EM-|LUM/.test(c))return "light";
+  if(/FLUORO|LIGHT|LIGHING|^LT|EMERG|^EM-|LUM|LED/.test(c))return "light";
   return "load";}
 function phaseOf(name){const m=name.match(/^(\d)\s*[RWB]?\s*\|/);return m?(m[1]==="3"?3:1):3;}
 function defLoad(k){return {socket:20,light:10,motor:20,load:16}[k]||16;}
-// Decode a PowerCad-5 .QPJ project (binary). Returns the switchboard tree and final circuits.
+// Decode a .QPJ project (binary). Returns the switchboard tree and final circuits.
 function parseQPJ(buf){
   const d=new Uint8Array(buf),dv=new DataView(buf),L=d.length;
   let head="";for(let i=0;i<QPJ_MAGIC.length&&i<L;i++)head+=String.fromCharCode(d[i]);
-  if(head!==QPJ_MAGIC)throw new Error("This file doesn't start with PowerCad's project header, so it isn't a PowerCad-5 .QPJ project.");
-  const lstr=o=>{if(o<0||o+2>L)return null;const n=dv.getUint16(o,true);if(n<1||n>60||o+2+n>L)return null;let s="";
-    for(let i=0;i<n;i++){const c=d[o+2+i];if(c===0xb0)s+="°";else if(c>=32&&c<127)s+=String.fromCharCode(c);else return null;}return {s,end:o+2+n};};
+  if(head!==QPJ_MAGIC)throw new Error("This file doesn't start with a .QPJ project header, so it can't be opened as a project.");
+  // Strings: u16 length + bytes. Newer versions sometimes nest a ShortString (first byte = length-1).
+  const lstr=(o,allowEmpty)=>{if(o<0||o+2>L)return null;const n=dv.getUint16(o,true);
+    if(n===0)return allowEmpty?{s:"",end:o+2}:null;if(n>60||o+2+n>L)return null;
+    let i0=0;if(n>1&&d[o+2]===n-1)i0=1;let s="";
+    for(let i=i0;i<n;i++){const c=d[o+2+i];if(c===0xb0)s+="°";else if(c>=32&&c<127)s+=String.fromCharCode(c);else return null;}
+    return s?{s,end:o+2+n}:null;};
   const f64=o=>o+8<=L?dv.getFloat64(o,true):NaN,f32=o=>o+4<=L?dv.getFloat32(o,true):NaN;
-  const CCT=/^[\w ]{1,4}\|[A-Z]+-?\d*$|^(M\d+|FAN-\d+|HP-\d+|MTR-\d+)$/,INS=/^(PVC|XLPE|EPR|Elast|Fire)/;
-  const ev=[];let version="",transformer="";
+  const CCT=/^(\d[ RWBY]{0,2}\|.{1,48}|M\d+|FAN-\d+|HP-\d+|MTR-\d+)$/;
+  const INS=/^(PVC|XLPE|EPR|Elast|Fire|X-|V-|R-|\dV-|HF|LSZH|XHF|Butyl|MIMS|TPS)/i,vocab=s=>INS.test(s)||/^(Cu|Al|SnCu|PVC|XLPE|Generic)$/.test(s);
+  const ev=[];let version="",transformer="",kva=null,zpct=null;
+  // "last saved" timestamp: the last Delphi date in the header (0x3E in 5.0.74, 0x4F in 5.0.79+)
+  let tsOff=null;for(let o=0;o<0x60&&o+8<=L;o++){const v=f64(o);if(v>36526&&v<73051&&Math.abs(v-Math.round(v))>1e-7)tsOff=o;}
   for(let o=0;o<L-3;o++){
     const a=lstr(o);if(!a)continue;
-    if(a.s==="PowerCad-5"&&!version){const v=lstr(a.end);if(v)version=v.s;}
-    if(!transformer&&/^T\d{1,2}$/.test(a.s))transformer=a.s;
-    const b=lstr(a.end);
-    const vocab=s=>INS.test(s)||/^(Cu|Al|SnCu|PVC|XLPE)$/.test(s);
-    if(b&&b.s!==a.s&&!vocab(a.s)&&!vocab(b.s)){ // board record: name, parent, u32, 2×f64, 2×u16, insulation, conductor, 5×f64
-      const ins=lstr(b.end+24);
-      if(ins&&INS.test(ins.s)){const mat=lstr(ins.end);
-        if(mat&&/^(Cu|Al|SnCu)$/.test(mat.s)){
-          const load=f64(b.end+4),pf=f64(mat.end+16),amb=f64(mat.end+32);
-          ev.push({o,t:"board",name:a.s,parent:b.s,load:(load>0.5&&load<10000)?load:null,ins:ins.s,mat:mat.s,
-            pf:(pf>0.3&&pf<=1)?pf:null,amb:(amb>=10&&amb<70)?amb:null});
-          o=mat.end-1;continue;}}
-    }
-    if(o>0&&d[o-1]===0x0d&&CCT.test(a.s)){ // final sub-circuit record
-      let hint=null;for(let q=a.end;q<a.end+80;q++){const v=f32(q);if(v>=2&&v<=400&&Math.abs(v-Math.round(v))<1e-3&&Math.abs(v-208)>0.5){hint=Math.round(v);break;}}
-      ev.push({o,t:"cct",name:a.s,hint});o=a.end-1;
+    if(!version&&o<0x100&&/^\d+\.\d+\.\d+\.\d+/.test(a.s))version=a.s;
+    if(!transformer&&/^T\d{1,2}$/.test(a.s)&&a.end+20<=L&&dv.getUint32(a.end,true)<200){const k=f64(a.end+4),z=f64(a.end+12);
+      transformer=a.s;if(k>=10&&k<=5000)kva=k;if(z>0.5&&z<15)zpct=z;}
+    if(!vocab(a.s)){
+      const b=lstr(a.end,true);
+      if(b&&b.s!==a.s&&!INS.test(b.s)){ // board: name, parent, u32, f64 demand, f64, u16×2, insulation, conductor, f64×5
+        const ins=lstr(b.end+24);
+        if(ins&&INS.test(ins.s)){const mat=lstr(ins.end);
+          if(mat&&/^(Cu|Al|SnCu)$/.test(mat.s)){
+            const q={d0:b.end+4,len:mat.end,der:mat.end+8,pf:mat.end+16,vd:mat.end+24,amb:mat.end+32},v={};for(const k in q)v[k]=f64(q[k]);
+            if(!(v.vd>100))ev.push({o,t:"board",name:a.s,parent:b.s,ins:ins.s,mat:mat.s,q,v}); // VD > 100 % = the project's default-board template
+            o=mat.end-1;continue;}}
+      }
+      if(o>0&&(d[o-1]===0x0d||d[o-1]===0x0e)&&CCT.test(a.s)){ // final sub-circuit record
+        let hint=null;for(let q=a.end;q<a.end+80;q++){const x=f32(q);if(x>=2&&x<=400&&Math.abs(x-Math.round(x))<1e-3&&Math.abs(x-208)>0.5){hint=Math.round(x);break;}}
+        ev.push({o,t:"cct",name:a.s,hint});o=a.end-1;
+      }
     }
   }
   const boardEv=ev.filter(e=>e.t==="board");
   if(!boardEv.length&&!ev.length)throw new Error("No switchboards or circuits were found in this project file.");
-  const bnames=new Set(boardEv.map(e=>e.name)),cnt={};
-  boardEv.forEach(e=>{if(!bnames.has(e.parent))cnt[e.parent]=(cnt[e.parent]||0)+1;});
-  const root=Object.keys(cnt).sort((x,y)=>cnt[y]-cnt[x])[0]||"MSB";
-  let id=1;const net=[],idOf={};
-  const rootN={id:id++,name:root,parent:0,load:0,len:30,uid:"STA:6|1",method:"touching",fsc:false,kind:"board",flag:true,est:true};
-  net.push(rootN);idOf[root]=rootN.id;let cur=rootN,amb=null,pf=null;
+  let id=1;const net=[],idOf={},warn=[];let cur=null,amb=null,pf=null;
+  const ok=(x,lo,hi)=>isFinite(x)&&x>=lo&&x<=hi;
   ev.forEach(e=>{
-    if(e.t==="board"){const n={id:id++,name:e.name,_p:e.parent,load:e.load??100,len:30,uid:"STA:5|1",method:"conduit",fsc:false,kind:"board",flag:true,
-        ins:/^PVC 75/.test(e.ins)?"V75":"X90",mat:e.mat==="Al"?"Al":"Cu",pf:e.pf||undefined};
-      net.push(n);idOf[e.name]=n.id;cur=n;if(e.amb&&amb==null)amb=e.amb;if(e.pf&&pf==null)pf=e.pf;}
-    else{const k=kindOf(e.name),ph=phaseOf(e.name);
-      net.push({id:id++,name:e.name,parent:cur.id,load:e.hint??defLoad(k),len:25,uid:"STA:4|1",method:"conduit",fsc:true,kind:k,ph,flag:true,est:e.hint==null});}
+    if(e.t==="board"){if(idOf[e.name]){warn.push(`a second record for board "${e.name}" was skipped`);return;}
+      const v=e.v,n={id:id++,name:e.name,_p:e.parent,load:ok(v.d0,0,20000)?Math.round(v.d0*1000)/1000:100,len:ok(v.len,0,10000)?v.len:30,
+        uid:"STA:5|1",method:"conduit",fsc:false,kind:"board",autoMD:false,
+        ins:/^PVC 75|^V-75/i.test(e.ins)?"V75":"X90",insRaw:e.ins,mat:e.mat==="Al"?"Al":"Cu",
+        pf:ok(v.pf,0.3,1)?v.pf:undefined,derate:ok(v.der,0.05,2)?v.der:1,vdmax:ok(v.vd,0.1,100)?v.vd:0,amb:ok(v.amb,0,70)?v.amb:undefined,_q:e.q};
+      if(n.len<0.001){n.len=0;n.bus=true;} // zero-length feeder = split-bus section of the parent board (no cable)
+      n._orig={load:n.load,len:n.len,pf:n.pf,derate:n.derate,vdmax:n.vdmax,amb:n.amb,name:n.name};
+      net.push(n);idOf[e.name]=n.id;cur=n;if(n.amb!=null&&amb==null)amb=n.amb;if(n.pf&&pf==null)pf=n.pf;}
+    else{if(!cur){cur={id:id++,name:"MSB",_p:"",load:100,len:30,uid:"STA:6|1",method:"touching",fsc:false,kind:"board",flag:true,est:true};net.push(cur);idOf.MSB=cur.id;}
+      const k=kindOf(e.name),ph=phaseOf(e.name);
+      net.push({id:id++,name:e.name,parent:cur.id,load:e.hint??defLoad(k),len:25,uid:"STA:4|1",method:"conduit",fsc:true,kind:k,ph,flag:true,est:true,_cct:true});}
   });
-  net.forEach(n=>{if(n._p!==undefined){n.parent=idOf[n._p]??rootN.id;delete n._p;}});
-  rootN.load=Math.round(net.filter(n=>n.parent===rootN.id).reduce((s,n)=>s+(n.ph===1?n.load/3:n.load),0))||100;
-  return {net,transformer:transformer||"T1",version,amb,pf,
+  net.forEach(n=>{if(n._p!==undefined){if(n._p===""){n.parent=0;}else if(idOf[n._p]){n.parent=idOf[n._p];}
+      else{n.parent=0;warn.push(`"${n.name}" is fed from "${n._p}", which isn't a switchboard in the file, so it was connected to the supply`);}
+      if(n._orig)n._orig.parent=n.parent;delete n._p;}});
+  net.forEach(n=>{if(n._cct)n._orig={load:n.load,len:n.len,name:n.name,parent:n.parent};});
+  return {net,transformer,kva,zpct,version,amb,pf,warn,tsOff,
     stats:{boards:net.filter(n=>n.kind==="board").length,ccts:net.filter(n=>n.fsc).length}};
+}
+// Write edits back into the original .QPJ: board values are fixed-width doubles, so they are
+// patched in place and every other byte is kept. The files carry no checksum.
+function buildQPJ(src,net,now){
+  const out=new Uint8Array(src.bytes),dv=new DataView(out.buffer),written=[],notWritten=[];
+  const same=(a,b)=>(a==null&&b==null)||(a!=null&&b!=null&&Math.abs(a-b)<1e-9);
+  const ids=new Set(net.map(n=>n.id));
+  net.forEach(n=>{
+    if(n._q){const map=[["load","d0","load"],["len","len","length"],["derate","der","derating"],["pf","pf","power factor"],["vdmax","vd","max voltage drop"],["amb","amb","ambient"]];
+      map.forEach(([f,k,lbl])=>{const v=n[f];if(!same(v,n._orig[f])){if(v!=null&&isFinite(v)){dv.setFloat64(n._q[k],v,true);written.push(`${n.name} ${lbl}`);}else notWritten.push(`${n.name} ${lbl} (cleared)`);}});
+      if(n.name!==n._orig.name)notWritten.push(`rename of ${n._orig.name}`);if(n.parent!==n._orig.parent)notWritten.push(`new supply for ${n.name}`);}
+    else if(n._orig){if(!same(n.load,n._orig.load)||!same(n.len,n._orig.len))notWritten.push(`${n.name} load/length`);if(n.name!==n._orig.name)notWritten.push(`rename of ${n._orig.name}`);if(n.parent!==n._orig.parent)notWritten.push(`move of ${n.name}`);}
+    else notWritten.push(`new ${n.name}`);});
+  (src.ids||[]).forEach(i=>{if(!ids.has(i))notWritten.push("a deleted item");});
+  if(src.tsOff!=null&&now)dv.setFloat64(src.tsOff,now.getTime()/86400000+25569-now.getTimezoneOffset()/1440,true);
+  return {bytes:out,written,notWritten};
 }
 // CSV helpers
 function parseCSV(t){const rows=[];let row=[],f="",q=false;t=t.replace(/^﻿/,"");
@@ -579,12 +714,12 @@ function parseCSV(t){const rows=[];let row=[],f="",q=false;t=t.replace(/^﻿/,""
   if(f!==""||row.length){row.push(f);rows.push(row);}
   return rows.filter(r=>r.some(x=>x.trim()!==""));}
 const csvCell=v=>{v=v==null?"":String(v);return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
-const PC_COLS=["Cable ID","SWB From","SWB To","SWB Type","SWB Load","SWB PF","Cable Length","Cable Size - Active conductors","Cable Size - Neutral conductors","Cable Size - Earthing conductor","Active Conductor material","# of Phases","Cable Type","Cable Insulation","Installation Method","Cable Additional De-rating"];
-// Import PowerCad's SWB/Loads/Cables CSV (User Guide supplement S17)
-function parsePowerCadCSV(text){
+const SWB_COLS=["Cable ID","SWB From","SWB To","SWB Type","SWB Load","SWB PF","Cable Length","Cable Size - Active conductors","Cable Size - Neutral conductors","Cable Size - Earthing conductor","Active Conductor material","# of Phases","Cable Type","Cable Insulation","Installation Method","Cable Additional De-rating"];
+// Import an SWB/Loads/Cables CSV
+function parseSwbCSV(text){
   const rows=parseCSV(text);if(rows.length<1)throw new Error("The CSV file is empty.");
   const H=rows[0].map(h=>h.trim().toLowerCase()),col=n=>H.indexOf(n.toLowerCase());
-  if(col("SWB From")<0||col("SWB To")<0)throw new Error("This CSV doesn't have PowerCad's \"SWB From\" and \"SWB To\" columns. Export it from PowerCad using the Swb/Loads/Cables CSV template.");
+  if(col("SWB From")<0||col("SWB To")<0)throw new Error("This CSV doesn't have the \"SWB From\" and \"SWB To\" columns of an SWB/Loads/Cables CSV.");
   const g=(r,n)=>{const i=col(n);return i<0?"":(r[i]||"").trim();},num=(s,d)=>{const v=parseFloat(s);return isFinite(v)?v:d;};
   let id=1,transformer="";const net=[],by={},warn=[];
   rows.slice(1).forEach((r,ix)=>{const to=g(r,"SWB To");if(!to){warn.push(`row ${ix+2} has no SWB To`);return;}
@@ -603,64 +738,100 @@ function parsePowerCadCSV(text){
   if(!net.length)throw new Error("No cable rows were found in this CSV.");
   return {net,transformer:transformer||"T1",warn,stats:{boards:net.length,ccts:0}};
 }
-// Export the mains & sub-mains as PowerCad's SWB/Loads/Cables CSV
-function buildPowerCadCSV(withSizes){
-  const C=computeNet(),out=[PC_COLS.map(csvCell).join(",")];let cid=1;
+// Export the mains & sub-mains as an SWB/Loads/Cables CSV
+function buildSwbCSV(withSizes){
+  const C=computeNet(),out=[SWB_COLS.map(csvCell).join(",")];let cid=1;
   const kids=p=>NET.filter(n=>n.parent===p);
   (function walk(p){kids(p).forEach(n=>{if(n.kind!=="board")return;const par=p?byId(p):null;const c=CBYKEY[n.uid];
-    const size=withSizes&&C.res[n.id].size!=null?String(C.res[n.id].size):"";
-    out.push([cid++,par?par.name:`(${PROJ.transformer||"T1"})`,n.name,"",fmtN(n.load),fmtN(n.pf||num("nPf")),fmtN(n.len),size,"","",
+    const r=C.res[n.id],has=withSizes&&r.size!=null,par1=Math.max(1,r.par||1),fmtS=s=>s==null?"":(par1>1?`${par1}x${s}`:String(s));
+    out.push([cid++,par?par.name:`(${PROJ.transformer||"T1"})`,n.name,"",fmtN(n.autoMD?r.md:n.load),fmtN(n.pf||num("nPf")),fmtN(n.len),
+      has?fmtS(r.size):"",has?fmtS(r.neutral):"",has?String(r.e):"",
       n.mat||"Cu","",/SINGLE-CORE/.test(c.desc)?"SDI":"Multi",n.ins==="V75"?"V75":"XLPE90",
       (n.method==="touching"||n.method==="spaced")?"L":"",""].map(csvCell).join(","));
     walk(n.id);});})(0);
   return out.join("\r\n")+"\r\n";
 }
 function fmtN(v){return v==null||isNaN(v)?"":String(Math.round(v*1000)/1000);}
+// Full cable schedule (every cable, including final sub-circuits)
+function buildSchedule(){
+  const C=computeNet(),H=["Cable","From","To","Type","Phases","Design current A","Device","Rating In A","Length m","Cable type","Installation","Conductor","Insulation","Active mm²","Neutral mm²","Earth mm²","Governed by","Cable VD %","Path VD %","Target VD %","Fault at supply end kA","Fault at load end kA","Max length (fault loop) m","Fault-loop OK","Notes"];
+  const out=[H.map(csvCell).join(",")];let i=1;
+  (function walk(p){NET.filter(n=>n.parent===p).forEach(n=>{const r=C.res[n.id],par=p?byId(p):null,c=CBYKEY[n.uid];
+    const notes=[n.flag?"length not in source file":"",n.est?"load estimated":"",r.sized?"":"no listed size passes",(C.acc[n.id]||0)>C.site?"path VD over site allowance":""].filter(Boolean).join("; ");
+    out.push([i++,par?par.name:(C.sup==="tx"?PROJ.transformer||"T1":"Supply"),n.name,n.fsc?"Final sub-circuit":(par?"Sub-main":"Mains"),n.ph===1?1:3,fmtN(r.md),
+      (DEVTYPES[r.dev]||{}).lbl||r.dev,r.In,fmtN(n.len),c.desc,MLAB[n.method]||n.method,n.mat||"Cu",n.ins==="V75"?"PVC 75°C":"XLPE 90°C",
+      r.bus?"bus section":(r.label??""),r.neutral!=null?(r.par>1?`${r.par}x${r.neutral}`:r.neutral):"",r.e??"",r.sized?r.gov:"",fmtN(r.vd),fmtN(C.acc[n.id]),fmtN(r.target),fmtN(r.ikSrc/1000),fmtN(r.ikEnd/1000),r.lm!=null?Math.round(r.lm):"",
+      r.flOk==null?"":r.flOk?"yes":"no",notes].map(csvCell).join(","));
+    walk(n.id);});})(0);
+  return out.join("\r\n")+"\r\n";
+}
+// Minimal ZIP (stored) so a .QPJ can be handed over where only .zip downloads are allowed
+function crc32(u8){let c,crc=0xFFFFFFFF;for(let i=0;i<u8.length;i++){c=(crc^u8[i])&0xFF;for(let k=0;k<8;k++)c=c&1?(c>>>1)^0xEDB88320:c>>>1;crc=(crc>>>8)^c;}return (crc^0xFFFFFFFF)>>>0;}
+function zipOne(name,data){const nm=new TextEncoder().encode(name),crc=crc32(data),sz=data.length;
+  const lh=new Uint8Array(30+nm.length),v=new DataView(lh.buffer);
+  [[0,0x04034b50,4],[4,20,2],[6,0,2],[8,0,2],[10,0,2],[12,0x21,2],[14,crc,4],[18,sz,4],[22,sz,4],[26,nm.length,2],[28,0,2]].forEach(([o,x,b])=>b===4?v.setUint32(o,x,true):v.setUint16(o,x,true));lh.set(nm,30);
+  const cd=new Uint8Array(46+nm.length),w=new DataView(cd.buffer);
+  [[0,0x02014b50,4],[4,20,2],[6,20,2],[8,0,2],[10,0,2],[12,0,2],[14,0x21,2],[16,crc,4],[20,sz,4],[24,sz,4],[28,nm.length,2],[30,0,2],[32,0,2],[34,0,2],[36,0,2],[38,0,4],[42,0,4]].forEach(([o,x,b])=>b===4?w.setUint32(o,x,true):w.setUint16(o,x,true));cd.set(nm,46);
+  const eo=new Uint8Array(22),e=new DataView(eo.buffer);e.setUint32(0,0x06054b50,true);e.setUint16(8,1,true);e.setUint16(10,1,true);e.setUint32(12,cd.length,true);e.setUint32(16,lh.length+sz,true);
+  const all=new Uint8Array(lh.length+sz+cd.length+22);all.set(lh,0);all.set(data,lh.length);all.set(cd,lh.length+sz);all.set(eo,lh.length+sz+cd.length);return all;}
 /*QPJ-END*/
 
 // ===== project state, open / save =====
-const PROJ={transformer:"T1",source:"example"};
-function projectJSON(){return JSON.stringify({format:"quickcable-project",version:1,name:$("projName").value,transformer:PROJ.transformer,
-  params:{V:num("nV"),ph:+$("nPh").value,pf:num("nPf"),site:num("nSite"),fsc:num("nFsc"),amb:num("nAmb")},nid,net:NET},null,1);}
+const PROJ={transformer:"T1",source:"example",qpj:null};
+const b64=u8=>{let s="";for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s);};
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+const PARAM_IDS=[["nV","V"],["nPh","ph"],["nPf","pf"],["nSite","site"],["nFsc","fsc"],["nAmb","amb"],["nSup","sup"],["nKva","kva"],["nZ","zpct"],["nIk","ik"],["nT","t"],["nPfT","pfT"]];
+const PARAM_DEFAULTS={V:400,ph:3,pf:0.9,site:5,fsc:1.5,amb:40,sup:"tx",kva:0,zpct:0,ik:10,t:0.02,pfT:0.95};
+function setParams(p){PARAM_IDS.forEach(([i,k])=>{const v=p[k]??PARAM_DEFAULTS[k];$(i).value=String(v);});supSync();}
+function qpjBtnSync(){const b=$("qpjBtn");b.disabled=!PROJ.qpj;b.title=PROJ.qpj?`Write your changes into a copy of ${PROJ.qpj.name}`:"Open a .QPJ project first";}
+function projectJSON(){const params={};PARAM_IDS.forEach(([i,k])=>params[k]=$(i).value);
+  return JSON.stringify({format:"quickcable-project",version:2,name:$("projName").value,transformer:PROJ.transformer,params,nid,net:NET,
+    qpj:PROJ.qpj?{name:PROJ.qpj.name,tsOff:PROJ.qpj.tsOff,ids:PROJ.qpj.ids,b64:b64(PROJ.qpj.bytes)}:null},null,1);}
 function loadProject(obj){
   if(!obj||obj.format!=="quickcable-project"||!Array.isArray(obj.net))throw new Error("This JSON file isn't a QuickCable project.");
   NET=obj.net;nid=obj.nid||Math.max(0,...NET.map(n=>n.id))+1;PROJ.transformer=obj.transformer||"T1";
-  const p=obj.params||{};[["nV","V"],["nPf","pf"],["nSite","site"],["nFsc","fsc"],["nAmb","amb"]].forEach(([i,k])=>{if(p[k]!=null)$(i).value=p[k];});
-  if(p.ph)$("nPh").value=String(p.ph);$("projName").value=obj.name||"QuickCable project";
+  setParams(obj.params||{});$("projName").value=obj.name||"QuickCable project";
+  PROJ.qpj=obj.qpj&&obj.qpj.b64?{name:obj.qpj.name,tsOff:obj.qpj.tsOff,ids:obj.qpj.ids||[],bytes:unb64(obj.qpj.b64)}:null;qpjBtnSync();
 }
-function applyImport(r,fileName,kind){
-  NET=r.net;nid=Math.max(0,...NET.map(n=>n.id))+1;PROJ.transformer=r.transformer;selId=null;
-  if(r.amb)$("nAmb").value=r.amb;if(r.pf)$("nPf").value=Math.round(r.pf*100)/100;
-  $("projName").value=fileName.replace(/\.[^.]+$/,"");
+function applyImport(r,fileName,kind,bytes){
+  NET=r.net;nid=Math.max(0,...NET.map(n=>n.id))+1;selId=null;
+  const p={...PARAM_DEFAULTS};if(r.amb!=null)p.amb=r.amb;if(r.pf)p.pf=Math.round(r.pf*100)/100;
+  if(kind==="qpj"){PROJ.qpj={name:fileName,bytes:new Uint8Array(bytes),tsOff:r.tsOff,ids:NET.filter(n=>n._orig).map(n=>n.id)};
+    if(r.transformer){p.sup="tx";p.kva=r.kva?Math.round(r.kva*10)/10:0;p.zpct=r.zpct?Math.round(r.zpct*100)/100:0;}else p.sup="net";}
+  else{PROJ.qpj=null;p.sup=r.transformer?"tx":p.sup;}
+  PROJ.transformer=r.transformer||"T1";setParams(p);qpjBtnSync();
+  $("projName").value=fileName.replace(/\.qpj(\.\d+)?$/i,"").replace(/\.[^.]+$/,"");
   const flagged=NET.filter(n=>n.flag).length,est=NET.filter(n=>n.est).length;
-  let msg=`<b>Opened ${esc(fileName)}</b>${r.version?` (PowerCad-5 ${esc(r.version)})`:""}: ${r.stats.boards} switchboard${r.stats.boards===1?"":"s"}`+
-    (r.stats.ccts?` and ${r.stats.ccts} final sub-circuits`:"")+`, supplied from transformer ${esc(r.transformer)}.`;
-  if(kind==="qpj")msg+=` Board names, how they connect, circuit types and phases, insulation, conductor, power factor and ambient were read from the file. <b>Cable lengths aren't held at a fixed place in .QPJ files</b>, so ${flagged} lengths were set to defaults and marked <span class="flag">⚠</span>; ${est} loads were estimated. Enter real values in the diagram or the network table.`;
-  if(kind==="csv"&&r.warn&&r.warn.length)msg+=` Notes: ${r.warn.map(esc).join("; ")}.`;
-  if(kind==="csv")msg+=` PowerCad's CSV holds mains and sub-mains only, so no final sub-circuits were imported.`;
+  const supply=r.transformer?`transformer ${esc(r.transformer)}${r.kva?` (${fmt(r.kva,0)} kVA${r.zpct?`, ${fmt(r.zpct,2)} %`:""})`:""}`:"a network supply (no transformer in the file; set the fault level at the supply on the Network table tab)";
+  let msg=`<b>Opened ${esc(fileName)}</b>${r.version?` (file version ${esc(r.version)})`:""}: ${r.stats.boards} switchboard${r.stats.boards===1?"":"s"}`+
+    (r.stats.ccts?` and ${r.stats.ccts} final sub-circuits`:"")+`, supplied from ${supply}.`;
+  if(kind==="qpj")msg+=` <b>Read from the file</b> for each switchboard: its supply, maximum demand, feeder cable length, insulation, conductor, power factor, derating, maximum voltage drop and ambient. For final sub-circuits: names, types and phases. <b>Not read from the file yet:</b> final sub-circuit loads and lengths (${flagged} lengths and ${est} loads set to defaults and marked <span class="flag">⚠</span>), and the cable sizes and protective devices stored in the project, which QuickCable recalculates.`;
+  if(r.warn&&r.warn.length)msg+=` Notes: ${r.warn.map(esc).join("; ")}.`;
+  if(kind==="csv")msg+=` An SWB/Loads/Cables CSV holds mains and sub-mains only, so no final sub-circuits were imported.`;
   report(msg);renderNet();document.querySelector('.tabs button[data-tab="diagram"]').click();
 }
 async function openFile(file){
-  try{const ext=(file.name.split(".").pop()||"").toLowerCase();
-    if(ext==="qpj")applyImport(parseQPJ(await file.arrayBuffer()),file.name,"qpj");
-    else if(ext==="csv")applyImport(parsePowerCadCSV(await file.text()),file.name,"csv");
+  try{const ext=/\.qpj(\.\d+)?$/i.test(file.name)?"qpj":(file.name.split(".").pop()||"").toLowerCase(); // backups: NAME.QPJ.1, .2 …
+    if(ext==="qpj"){const buf=await file.arrayBuffer();applyImport(parseQPJ(buf),file.name,"qpj",buf);}
+    else if(ext==="csv")applyImport(parseSwbCSV(await file.text()),file.name,"csv");
     else if(ext==="json"){loadProject(JSON.parse(await file.text()));selId=null;report(`<b>Opened ${esc(file.name)}</b>: ${NET.length} components.`);renderNet();document.querySelector('.tabs button[data-tab="diagram"]').click();}
-    else throw new Error(`QuickCable can't open .${esc(ext)} files. Choose a PowerCad .QPJ project, a PowerCad CSV, or a QuickCable .json project.`);
+    else throw new Error(`QuickCable can't open .${esc(ext)} files. Choose a .QPJ project, an SWB/Loads/Cables CSV, or a QuickCable .json project.`);
   }catch(e){report(esc(e.message||String(e)),true);}
 }
 function report(html,err){$("report").innerHTML=`<div class="report ${err?"err":""}"><button class="x" type="button" aria-label="Dismiss" onclick="this.parentNode.remove()">✕</button>${html}</div>`;}
 function toast(t){const el=document.createElement("div");el.className="toast";el.textContent=t;document.body.appendChild(el);setTimeout(()=>el.remove(),2600);}
 let DLP=null;function getDL(){if(!DLP)DLP=(async()=>{try{return (window.claude&&window.claude.use)?await window.claude.use("downloads"):null;}catch(_){return null;}})();return DLP;}
 async function offerFile(filename,text){
-  const dl=await getDL();
-  if(dl){try{const r=await dl.save({filename,data:text});if(r&&r.status==="saved")toast("Saved "+filename);return;}
+  const dl=await getDL(),bin=typeof text!=="string";
+  if(dl){try{const r=await dl.save({filename,data:bin?text.slice():text});if(r&&r.status==="saved")toast("Saved "+filename);return;}
     catch(e){const c=e&&e.code;if(c==="declined"){toast("Save cancelled");return;}if(c==="rate_limited"){toast("A save prompt is already open");return;}}}
   // hosted on its own (e.g. GitHub Pages): a normal browser download works
-  if(!window.claude){try{const type=/\.csv$/i.test(filename)?"text/csv":"application/json";
-    const url=URL.createObjectURL(new Blob([text],{type:type+";charset=utf-8"}));
+  if(!window.claude){try{const type=bin?"application/octet-stream":/\.csv$/i.test(filename)?"text/csv;charset=utf-8":"application/json;charset=utf-8";
+    const url=URL.createObjectURL(new Blob([text],{type}));
     const a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),4000);toast("Saved "+filename);return;}catch(_){}}
   // this view can't save files: show the contents to copy instead
+  if(bin){report(`<b>This view can't save files.</b> Open QuickCable from GitHub Pages or from the index.html file to save ${esc(filename)}.`,true);return;}
   report(`<div class="fallback"><b>This view can't save files</b>, so here is ${esc(filename)} to copy into a file. <button class="toolbtn" type="button" id="copyFb" style="margin-left:6px">Copy</button><textarea id="fbText" readonly></textarea></div>`);
   $("fbText").value=text;$("copyFb").addEventListener("click",()=>{navigator.clipboard.writeText(text).then(()=>toast("Copied")).catch(()=>{$("fbText").select();toast("Press Ctrl+C to copy");});});
 }
@@ -668,9 +839,17 @@ const safeName=()=>($("projName").value.trim()||"project").replace(/[\\/:*?"<>|]
 $("openBtn").addEventListener("click",()=>$("fileIn").click());
 $("fileIn").addEventListener("change",e=>{const f=e.target.files[0];if(f)openFile(f);e.target.value="";});
 $("saveBtn").addEventListener("click",()=>offerFile(safeName()+".quickcable.json",projectJSON()));
-$("csvBtn").addEventListener("click",()=>{if(!NET.some(n=>n.kind==="board")){report("There are no switchboards to export — PowerCad's CSV lists mains and sub-mains cables only.",true);return;}
-  offerFile(safeName()+" - Swb, Loads, Cables.csv",buildPowerCadCSV($("csvSizes").checked));});
-$("newBtn").addEventListener("click",()=>{example();PROJ.transformer="T1";selId=null;$("projName").value="Example project";$("report").innerHTML="";renderNet();if(!$("tab-diagram").hidden)renderDiagram();});
+$("csvBtn").addEventListener("click",()=>{if(!NET.some(n=>n.kind==="board")){report("There are no switchboards to export — the SWB CSV lists mains and sub-mains cables only.",true);return;}
+  offerFile(safeName()+" - Swb, Loads, Cables.csv",buildSwbCSV($("csvSizes").checked));});
+$("schedBtn").addEventListener("click",()=>offerFile(safeName()+" - cable schedule.csv",buildSchedule()));
+$("qpjBtn").addEventListener("click",()=>{if(!PROJ.qpj)return;
+  const r=buildQPJ(PROJ.qpj,NET,new Date()),base=safeName();
+  const list=a=>a.length>8?a.slice(0,8).map(esc).join("; ")+` and ${a.length-8} more`:a.map(esc).join("; ");
+  report(`<b>Saved ${r.written.length} change${r.written.length===1?"":"s"} into a copy of ${esc(PROJ.qpj.name)}</b>${r.written.length?`: ${list(r.written)}`:" (nothing changed — the copy only gets a new save time)"}. Every other byte of the original is kept.`+
+    (r.notWritten.length?` <b>Not written to the .QPJ</b>, because QuickCable can only change values it reads from the file: ${list(r.notWritten)}. Make these changes in the original application, or keep them with Save project or Export SWB CSV.`:"")+
+    (window.claude?` In Claude the file comes inside a .zip; unzip it to get the .QPJ.`:""));
+  if(window.claude)offerFile(base+".zip",zipOne(base+".QPJ",r.bytes));else offerFile(base+".QPJ",r.bytes);});
+$("newBtn").addEventListener("click",()=>{example();PROJ.transformer="T1";PROJ.qpj=null;qpjBtnSync();setParams({});selId=null;$("projName").value="Example project";$("report").innerHTML="";renderNet();if(!$("tab-diagram").hidden)renderDiagram();});
 let dragN=0;
 window.addEventListener("dragenter",e=>{if([...(e.dataTransfer?.types||[])].includes("Files")){dragN++;document.body.classList.add("dragging");}});
 window.addEventListener("dragleave",()=>{if(--dragN<=0){dragN=0;document.body.classList.remove("dragging");}});
@@ -678,13 +857,49 @@ window.addEventListener("dragover",e=>{if([...(e.dataTransfer?.types||[])].inclu
 window.addEventListener("drop",e=>{const f=e.dataTransfer?.files?.[0];dragN=0;document.body.classList.remove("dragging");if(f){e.preventDefault();openFile(f);}});
 getDL();
 
+// ---- feature coverage ----
+const COVER=[
+ ["Files","Open .QPJ projects (file versions 5.0.74 – 5.0.80)","P","Boards fully read: supply, max demand, feeder length, insulation, conductor, PF, derating, max VD, ambient; transformer kVA and impedance. Final sub-circuits: names, types, phases only."],
+ ["Files","Save .QPJ projects","P","Edits to switchboard values are written into a copy of the original, byte-exact. Adding, deleting, renaming or re-connecting items isn't written."],
+ ["Files","Import / export SWB/Loads/Cables CSV","Y","Exact 16-column format."],
+ ["Project","Project details and options (supply, standards)","P","Voltage, phases, PF, site VD allowance. AS/NZS 3008 and 3000 only; no country voltage table."],
+ ["Cables","Active cable sizing (capacity, volt drop, fault)","Y","42 cable types; smallest size passing all three, governing criterion shown."],
+ ["Cables","Neutral conductor sizing","P","Full-size neutral only; reduced neutrals aren't offered."],
+ ["Cables","Earth conductor sizing","Y","AS/NZS 3000 Table 5.1, increased until the fault-loop length complies."],
+ ["Cables","Parallel cables, locked sizes","P","Parallel runs on the Single circuit tab; sizes can't be locked."],
+ ["Cables","Manufacturer cable libraries","P","Ratings for the STDCABLES, TRICAB, PRYSMIAN, NEXANS and OLDCABLES libraries; volt drop uses AS/NZS 3008 R/X."],
+ ["Cables","Derating (ambient, grouping, installation presets)","P","Ambient and grouping count, extra factor per cable. Tray, ladder and trunking arrangement tables aren't included."],
+ ["Cables","Conduit sizing","N",""],
+ ["Cables","Cable thermal stress (I²t)","P","Adiabatic k²S² ≥ I²t with a clearing time; device let-through energy curves aren't used."],
+ ["Loads","Connected loads and maximum demand (AS/NZS 3000 App. C)","P","Board demand summed from circuits with upstream diversity; the Appendix C load-group method isn't implemented."],
+ ["Loads","Electricity distributor metering","N",""],
+ ["Supply","Transformer selection and impedance","Y","Auto size from demand or entered rating; impedance estimated or entered."],
+ ["Supply","Network supply fault level","Y",""],
+ ["Distribution","Single line diagram","Y","Automatic layout; items can't be dragged to new positions."],
+ ["Distribution","Fault levels through the network","Y","Three-phase symmetrical, cables at 20 °C."],
+ ["Distribution","Volt drop through the network (PU target method)","Y","With each board's own max VD."],
+ ["Distribution","Split bus and bus tie","P","Bus sections import and carry load; no bus-tie switching."],
+ ["Distribution","Tee-off boxes, service pillars, junction boxes","P","Imported as boards."],
+ ["Distribution","Generators and ATS","N",""],
+ ["Protection","Circuit protective device sizing","P","Standard ratings and device type; no manufacturer device selection."],
+ ["Protection","Earth fault-loop impedance","Y","Maximum length per AS/NZS 3000 Appendix B."],
+ ["Protection","Coordination and selectivity","P","Three MCCB curves against cable withstand; manufacturer device libraries aren't included."],
+ ["Protection","Touch voltage","N",""],
+ ["Protection","Power factor correction","P","kVAr needed for a target PF; capacitor steps and resonance aren't modelled."],
+ ["Motors","Motor circuits and starting","P","Starting volt drop on the motor cable."],
+ ["Harmonics","Harmonic analysis and filters","N",""],
+ ["Arc flash","Arc flash hazard analysis","N",""],
+ ["Cost","Cost estimate, trade prices, discounts","N",""],
+ ["CAD","AutoCAD and Revit integration","N",""],
+ ["Reports","Reports and schedules","P","Cable schedule as CSV; printed reports aren't included."]];
+$("coverBody").innerHTML=COVER.map(([a,f,s,n])=>`<tr><td>${a}</td><td style="text-align:left;white-space:normal">${f}</td><td><span class="chip ${s==="Y"?"ok":s==="P"?"warn":"bad"}">${s==="Y"?"Included":s==="P"?"Partial":"Not included"}</span></td><td style="text-align:left;white-space:normal;min-width:260px;font-family:var(--sans)">${n}</td></tr>`).join("");
+$("coverDetails").querySelector("summary").textContent=`Feature coverage — ${COVER.filter(c=>c[2]==="Y").length} included, ${COVER.filter(c=>c[2]==="P").length} partial, ${COVER.filter(c=>c[2]==="N").length} not included`;
+
 // ---- about / tabs / theme ----
 $("about").innerHTML=`
-<p>PowerCad-5 is a Borland/Embarcadero C++Builder app (<code>rtl370.bpl</code>, <code>vcl370.bpl</code>) that also loads into AutoCAD as ARX plug-ins, licensed by a Sentinel HASP dongle. Its engine is branded <b>"QuickCable"</b> — the magic string heading every <code>.QPJ</code> project file.</p>
-<p style="margin-top:10px"><b>Decoded <code>.LIB</code> format:</b> a 5-offset header → a 24-byte directory (<code>size|flags</code> key → pointer) → per-type blocks (description, Cu/Al/SnCu, insulation grades with <code>[table:col:n]</code> references) → a shared region of installation-method sub-blocks, each a label (<i>"UNENCLOSED, TOUCHING"</i>, <i>"BURIED DIRECT"</i>…) followed by an IEEE-754 <code>double</code> array of current ratings per size. The first header section also holds per-size AC-resistance and reactance arrays. 42 cable types were decoded across 5 libraries (Standard, TRICAB, PRYSMIAN, NEXANS, OLDCABLES).</p>
-<p style="margin-top:10px"><b>Device <code>.dll</code> libraries</b> are compiled C++Builder binaries (Embarcadero RAD Studio 37) — their trip-curve data is embedded in code/resources, not stored as plain tables like the cables, so it isn't cleanly extractable without deep binary analysis.</p>
-<p style="margin-top:10px"><b>Project files.</b> A <code>.QPJ</code> starts with the header <code>QuickCable - PowerCad Software Pty Ltd</code> and a version string, then a stream of records built from length-prefixed strings. A switchboard record holds its name, then its parent board's name, its maximum demand, insulation, conductor, power factor and ambient. A final sub-circuit record is tagged <code>0x0D</code> and named by phase and type (<code>1R|SO-1</code> = single-phase on red, socket outlet 1; <code>3 |SO-1</code> = three-phase), followed by the AutoCAD symbols drawn on it. Cable lengths sit in variable-length cable records, so QuickCable sets them to defaults and marks them <span class="flag">⚠</span>. QuickCable writes PowerCad's own <b>SWB/Loads/Cables CSV</b> (User Guide S17), which PowerCad imports directly; it does not write <code>.QPJ</code> files.</p>
-<p style="margin-top:10px"><b>Reproduced:</b> the Cable Selection screen (type/method/derating, Iᵦ≤Iₙ≤Iᴢ, volt drop, fault withstand), the switchboard network with the PU target-voltage-drop cascade, and a single-line diagram editor echoing PowerCad's drawing side. <b>Not reproduced:</b> device trip-curve coordination, arc-flash, harmonics, generators, and AutoCAD output.</p>`;
+<p><b>Cable library.</b> 42 cable types from five libraries (Standard AS/NZS 3008, TRICAB, PRYSMIAN, NEXANS, OLDCABLES). Each type holds a current rating for every installation method and conductor size. Volt drop uses AS/NZS 3008 resistance and reactance.</p>
+<p style="margin-top:10px"><b>.QPJ projects.</b> A project file starts with a <code>QuickCable</code> header, the file version, the creation date and the last-saved date, then records built from length-prefixed strings. A switchboard record holds its name, its supply's name (empty for the board fed from the transformer), its maximum demand, insulation and conductor, then feeder length, derating, power factor, maximum voltage drop and ambient. Zero-length feeders are bus sections. The transformer record holds its kVA and impedance. Final sub-circuit records are named by phase and use (<code>1R|SO-1</code>, <code>3 |HWU</code>). The file carries no checksum, so QuickCable writes edited board values back into a copy of the original and keeps every other byte. It can't yet add, remove, rename or re-connect items in a <code>.QPJ</code>.</p>
+<p style="margin-top:10px"><b>SWB/Loads/Cables CSV.</b> A 16-column table of mains and sub-mains: cable ID, from, to, board type, load, PF, length, active, neutral and earth sizes, conductor, phases, cable type (SDI, Multi, BD), insulation (FR, XLPE90, XLPE110, V90, V75), installation method (PT, UPT, L) and additional derating. Transformers are written in brackets, for example <code>(T1)</code>.</p>`;
 document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute("aria-selected",x===b));
   $("tab-single").hidden=b.dataset.tab!=="single";$("tab-diagram").hidden=b.dataset.tab!=="diagram";$("tab-network").hidden=b.dataset.tab!=="network";$("tab-coord").hidden=b.dataset.tab!=="coord";
