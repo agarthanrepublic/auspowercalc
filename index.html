@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="QuickCable: AS/NZS 3008.1 cable sizing with .QPJ project and SWB/Loads/Cables CSV import and export.">
+<meta name="description" content="AusPowerCalc: AS/NZS 3008.1 cable sizing with .QPJ project and SWB/Loads/Cables CSV import and export.">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
-<title>QuickCable</title>
+<title>AusPowerCalc</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
 /* Layout: tabbed instrument — single-circuit calc, switchboard table, and an SVG single-line editor. */
@@ -131,7 +131,7 @@ body.dragging .wrap{outline:2px dashed var(--accent);outline-offset:6px;border-r
     <div class="row">
       <div class="logo">
         <svg class="spark" viewBox="0 0 48 48" fill="none" aria-hidden="true"><rect x="2" y="2" width="44" height="44" rx="10" fill="var(--accent)"/><path d="M26 9 L15 26 H23 L21 39 L33 20 H25 Z" fill="#1a1d21"/></svg>
-        <div><h1>QuickCable</h1><p class="sub">AS/NZS 3008.1 cable sizing &middot; 42 cable types in the library</p></div>
+        <div><h1>AusPowerCalc</h1><p class="sub">AS/NZS 3008.1 cable sizing &middot; 42 cable types in the library</p></div>
       </div>
       <button class="theme" id="themeBtn" type="button">◐ theme</button>
     </div>
@@ -156,7 +156,7 @@ body.dragging .wrap{outline:2px dashed var(--accent);outline-offset:6px;border-r
     <span class="spacer"></span>
     <button class="toolbtn" id="newBtn" type="button">New example</button>
   </div>
-  <p class="note" style="margin:6px 2px 0">Open a <code>.QPJ</code> project, an SWB/Loads/Cables CSV, or a saved QuickCable project — or drop the file anywhere on the page.</p>
+  <p class="note" style="margin:6px 2px 0">Open a <code>.QPJ</code> project, an SWB/Loads/Cables CSV, or a saved AusPowerCalc project — or drop the file anywhere on the page.</p>
   <div id="report"></div>
 
   <!-- ============ SINGLE CIRCUIT ============ -->
@@ -256,12 +256,12 @@ body.dragging .wrap{outline:2px dashed var(--accent);outline-offset:6px;border-r
     <div class="dbody"><p class="note" style="margin-bottom:12px"><b>Current-carrying capacity (A) for each cable type and installation method</b> — Standard (AS/NZS 3008), TRICAB, PRYSMIAN, NEXANS and OLDCABLES. Pick a type on the Single circuit tab to view its table.</p><div id="libView"></div></div></details>
   <details id="coverDetails"><summary>Feature coverage</summary>
     <div class="dbody">
-      <p class="note" style="margin-bottom:10px"><b>Included</b> works end to end; <b>Partial</b> covers the core of the feature; <b>Not included</b> isn't in QuickCable.</p>
-      <div class="tblwrap"><table class="cover"><thead><tr><th>Area</th><th>Feature</th><th>QuickCable</th><th style="text-align:left">Notes</th></tr></thead><tbody id="coverBody"></tbody></table></div>
+      <p class="note" style="margin-bottom:10px"><b>Included</b> works end to end; <b>Partial</b> covers the core of the feature; <b>Not included</b> isn't in AusPowerCalc.</p>
+      <div class="tblwrap"><table class="cover"><thead><tr><th>Area</th><th>Feature</th><th>AusPowerCalc</th><th style="text-align:left">Notes</th></tr></thead><tbody id="coverBody"></tbody></table></div>
     </div></details>
   <details id="aboutDetails"><summary>About the file formats</summary><div class="dbody note" id="about"></div></details>
 
-  <footer>QuickCable is an independent implementation of the AS/NZS 3008.1 cable-sizing method. Results are indicative — verify against the current standard and manufacturer data.</footer>
+  <footer>AusPowerCalc is an independent implementation of the AS/NZS 3008.1 cable-sizing method. Results are indicative — verify against the current standard and manufacturer data.</footer>
 </div>
 
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -618,7 +618,7 @@ function interpCurve(curve,I){ // time at current I by log-log interpolation
 
 /*QPJ-START*/
 // ===== project and library file formats =====
-const QPJ_MAGIC="QuickCable - "; // start of the .QPJ header
+const QPJ_MAGIC="AusPowerCalc - "; // start of the .QPJ header
 function kindOf(name){const u=name.toUpperCase(),c=u.includes("|")?u.split("|")[1].trim():u;
   if(/^(M\d+|HP-|FAN|MTR|MOTOR|PUMP|AHU)/.test(c))return "motor";
   if(/^SO|GPO|OUTLET|DSO/.test(c))return "socket";
@@ -785,12 +785,12 @@ const PARAM_DEFAULTS={V:400,ph:3,pf:0.9,site:5,fsc:1.5,amb:40,sup:"tx",kva:0,zpc
 function setParams(p){PARAM_IDS.forEach(([i,k])=>{const v=p[k]??PARAM_DEFAULTS[k];$(i).value=String(v);});supSync();}
 function qpjBtnSync(){const b=$("qpjBtn");b.disabled=!PROJ.qpj;b.title=PROJ.qpj?`Write your changes into a copy of ${PROJ.qpj.name}`:"Open a .QPJ project first";}
 function projectJSON(){const params={};PARAM_IDS.forEach(([i,k])=>params[k]=$(i).value);
-  return JSON.stringify({format:"quickcable-project",version:2,name:$("projName").value,transformer:PROJ.transformer,params,nid,net:NET,
+  return JSON.stringify({format:"AusPowerCalc-project",version:2,name:$("projName").value,transformer:PROJ.transformer,params,nid,net:NET,
     qpj:PROJ.qpj?{name:PROJ.qpj.name,tsOff:PROJ.qpj.tsOff,ids:PROJ.qpj.ids,b64:b64(PROJ.qpj.bytes)}:null},null,1);}
 function loadProject(obj){
-  if(!obj||obj.format!=="quickcable-project"||!Array.isArray(obj.net))throw new Error("This JSON file isn't a QuickCable project.");
+  if(!obj||obj.format!=="AusPowerCalc-project"||!Array.isArray(obj.net))throw new Error("This JSON file isn't a AusPowerCalc project.");
   NET=obj.net;nid=obj.nid||Math.max(0,...NET.map(n=>n.id))+1;PROJ.transformer=obj.transformer||"T1";
-  setParams(obj.params||{});$("projName").value=obj.name||"QuickCable project";
+  setParams(obj.params||{});$("projName").value=obj.name||"AusPowerCalc project";
   PROJ.qpj=obj.qpj&&obj.qpj.b64?{name:obj.qpj.name,tsOff:obj.qpj.tsOff,ids:obj.qpj.ids||[],bytes:unb64(obj.qpj.b64)}:null;qpjBtnSync();
 }
 function applyImport(r,fileName,kind,bytes){
@@ -805,7 +805,7 @@ function applyImport(r,fileName,kind,bytes){
   const supply=r.transformer?`transformer ${esc(r.transformer)}${r.kva?` (${fmt(r.kva,0)} kVA${r.zpct?`, ${fmt(r.zpct,2)} %`:""})`:""}`:"a network supply (no transformer in the file; set the fault level at the supply on the Network table tab)";
   let msg=`<b>Opened ${esc(fileName)}</b>${r.version?` (file version ${esc(r.version)})`:""}: ${r.stats.boards} switchboard${r.stats.boards===1?"":"s"}`+
     (r.stats.ccts?` and ${r.stats.ccts} final sub-circuits`:"")+`, supplied from ${supply}.`;
-  if(kind==="qpj")msg+=` <b>Read from the file</b> for each switchboard: its supply, maximum demand, feeder cable length, insulation, conductor, power factor, derating, maximum voltage drop and ambient. For final sub-circuits: names, types and phases. <b>Not read from the file yet:</b> final sub-circuit loads and lengths (${flagged} lengths and ${est} loads set to defaults and marked <span class="flag">⚠</span>), and the cable sizes and protective devices stored in the project, which QuickCable recalculates.`;
+  if(kind==="qpj")msg+=` <b>Read from the file</b> for each switchboard: its supply, maximum demand, feeder cable length, insulation, conductor, power factor, derating, maximum voltage drop and ambient. For final sub-circuits: names, types and phases. <b>Not read from the file yet:</b> final sub-circuit loads and lengths (${flagged} lengths and ${est} loads set to defaults and marked <span class="flag">⚠</span>), and the cable sizes and protective devices stored in the project, which AusPowerCalc recalculates.`;
   if(r.warn&&r.warn.length)msg+=` Notes: ${r.warn.map(esc).join("; ")}.`;
   if(kind==="csv")msg+=` An SWB/Loads/Cables CSV holds mains and sub-mains only, so no final sub-circuits were imported.`;
   report(msg);renderNet();document.querySelector('.tabs button[data-tab="diagram"]').click();
@@ -815,7 +815,7 @@ async function openFile(file){
     if(ext==="qpj"){const buf=await file.arrayBuffer();applyImport(parseQPJ(buf),file.name,"qpj",buf);}
     else if(ext==="csv")applyImport(parseSwbCSV(await file.text()),file.name,"csv");
     else if(ext==="json"){loadProject(JSON.parse(await file.text()));selId=null;report(`<b>Opened ${esc(file.name)}</b>: ${NET.length} components.`);renderNet();document.querySelector('.tabs button[data-tab="diagram"]').click();}
-    else throw new Error(`QuickCable can't open .${esc(ext)} files. Choose a .QPJ project, an SWB/Loads/Cables CSV, or a QuickCable .json project.`);
+    else throw new Error(`AusPowerCalc can't open .${esc(ext)} files. Choose a .QPJ project, an SWB/Loads/Cables CSV, or a AusPowerCalc .json project.`);
   }catch(e){report(esc(e.message||String(e)),true);}
 }
 function report(html,err){$("report").innerHTML=`<div class="report ${err?"err":""}"><button class="x" type="button" aria-label="Dismiss" onclick="this.parentNode.remove()">✕</button>${html}</div>`;}
@@ -831,14 +831,14 @@ async function offerFile(filename,text){
     const a=document.createElement("a");a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),4000);toast("Saved "+filename);return;}catch(_){}}
   // this view can't save files: show the contents to copy instead
-  if(bin){report(`<b>This view can't save files.</b> Open QuickCable from GitHub Pages or from the index.html file to save ${esc(filename)}.`,true);return;}
+  if(bin){report(`<b>This view can't save files.</b> Open AusPowerCalc from GitHub Pages or from the index.html file to save ${esc(filename)}.`,true);return;}
   report(`<div class="fallback"><b>This view can't save files</b>, so here is ${esc(filename)} to copy into a file. <button class="toolbtn" type="button" id="copyFb" style="margin-left:6px">Copy</button><textarea id="fbText" readonly></textarea></div>`);
   $("fbText").value=text;$("copyFb").addEventListener("click",()=>{navigator.clipboard.writeText(text).then(()=>toast("Copied")).catch(()=>{$("fbText").select();toast("Press Ctrl+C to copy");});});
 }
 const safeName=()=>($("projName").value.trim()||"project").replace(/[\\/:*?"<>|]+/g,"-").slice(0,80);
 $("openBtn").addEventListener("click",()=>$("fileIn").click());
 $("fileIn").addEventListener("change",e=>{const f=e.target.files[0];if(f)openFile(f);e.target.value="";});
-$("saveBtn").addEventListener("click",()=>offerFile(safeName()+".quickcable.json",projectJSON()));
+$("saveBtn").addEventListener("click",()=>offerFile(safeName()+".AusPowerCalc.json",projectJSON()));
 $("csvBtn").addEventListener("click",()=>{if(!NET.some(n=>n.kind==="board")){report("There are no switchboards to export — the SWB CSV lists mains and sub-mains cables only.",true);return;}
   offerFile(safeName()+" - Swb, Loads, Cables.csv",buildSwbCSV($("csvSizes").checked));});
 $("schedBtn").addEventListener("click",()=>offerFile(safeName()+" - cable schedule.csv",buildSchedule()));
@@ -846,7 +846,7 @@ $("qpjBtn").addEventListener("click",()=>{if(!PROJ.qpj)return;
   const r=buildQPJ(PROJ.qpj,NET,new Date()),base=safeName();
   const list=a=>a.length>8?a.slice(0,8).map(esc).join("; ")+` and ${a.length-8} more`:a.map(esc).join("; ");
   report(`<b>Saved ${r.written.length} change${r.written.length===1?"":"s"} into a copy of ${esc(PROJ.qpj.name)}</b>${r.written.length?`: ${list(r.written)}`:" (nothing changed — the copy only gets a new save time)"}. Every other byte of the original is kept.`+
-    (r.notWritten.length?` <b>Not written to the .QPJ</b>, because QuickCable can only change values it reads from the file: ${list(r.notWritten)}. Make these changes in the original application, or keep them with Save project or Export SWB CSV.`:"")+
+    (r.notWritten.length?` <b>Not written to the .QPJ</b>, because AusPowerCalc can only change values it reads from the file: ${list(r.notWritten)}. Make these changes in the original application, or keep them with Save project or Export SWB CSV.`:"")+
     (window.claude?` In Claude the file comes inside a .zip; unzip it to get the .QPJ.`:""));
   if(window.claude)offerFile(base+".zip",zipOne(base+".QPJ",r.bytes));else offerFile(base+".QPJ",r.bytes);});
 $("newBtn").addEventListener("click",()=>{example();PROJ.transformer="T1";PROJ.qpj=null;qpjBtnSync();setParams({});selId=null;$("projName").value="Example project";$("report").innerHTML="";renderNet();if(!$("tab-diagram").hidden)renderDiagram();});
@@ -898,7 +898,7 @@ $("coverDetails").querySelector("summary").textContent=`Feature coverage — ${C
 // ---- about / tabs / theme ----
 $("about").innerHTML=`
 <p><b>Cable library.</b> 42 cable types from five libraries (Standard AS/NZS 3008, TRICAB, PRYSMIAN, NEXANS, OLDCABLES). Each type holds a current rating for every installation method and conductor size. Volt drop uses AS/NZS 3008 resistance and reactance.</p>
-<p style="margin-top:10px"><b>.QPJ projects.</b> A project file starts with a <code>QuickCable</code> header, the file version, the creation date and the last-saved date, then records built from length-prefixed strings. A switchboard record holds its name, its supply's name (empty for the board fed from the transformer), its maximum demand, insulation and conductor, then feeder length, derating, power factor, maximum voltage drop and ambient. Zero-length feeders are bus sections. The transformer record holds its kVA and impedance. Final sub-circuit records are named by phase and use (<code>1R|SO-1</code>, <code>3 |HWU</code>). The file carries no checksum, so QuickCable writes edited board values back into a copy of the original and keeps every other byte. It can't yet add, remove, rename or re-connect items in a <code>.QPJ</code>.</p>
+<p style="margin-top:10px"><b>.QPJ projects.</b> A project file starts with a <code>AusPowerCalc</code> header, the file version, the creation date and the last-saved date, then records built from length-prefixed strings. A switchboard record holds its name, its supply's name (empty for the board fed from the transformer), its maximum demand, insulation and conductor, then feeder length, derating, power factor, maximum voltage drop and ambient. Zero-length feeders are bus sections. The transformer record holds its kVA and impedance. Final sub-circuit records are named by phase and use (<code>1R|SO-1</code>, <code>3 |HWU</code>). The file carries no checksum, so AusPowerCalc writes edited board values back into a copy of the original and keeps every other byte. It can't yet add, remove, rename or re-connect items in a <code>.QPJ</code>.</p>
 <p style="margin-top:10px"><b>SWB/Loads/Cables CSV.</b> A 16-column table of mains and sub-mains: cable ID, from, to, board type, load, PF, length, active, neutral and earth sizes, conductor, phases, cable type (SDI, Multi, BD), insulation (FR, XLPE90, XLPE110, V90, V75), installation method (PT, UPT, L) and additional derating. Transformers are written in brackets, for example <code>(T1)</code>.</p>`;
 document.querySelector(".tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;
   document.querySelectorAll('.tabs button').forEach(x=>x.setAttribute("aria-selected",x===b));
